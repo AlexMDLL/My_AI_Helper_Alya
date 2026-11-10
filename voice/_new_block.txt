@@ -1,0 +1,200 @@
+class SileroVoice:
+    """Нейросетевой русский голос Silero — живой, без робота."""
+
+    def __init__(self, model_id: str = "v5") -> None:
+        self.model_id = model_id
+        self.model = None
+        self.ready = False
+        self.failed = False
+        self.started = False
+        self.lock = threading.Lock()
+
+    def ensure_started(self) -> None:
+        if self.started or self.failed:
+            return
+        self.started = True
+        threading.Thread(target=self._load, daemon=True).start()
+
+    def _load(self) -> None:
+        try:
+            import torch
+
+            model, _ = torch.hub.load(
+                "snakers4/silero-models",
+                "silero_tts",
+                language="ru",
+                speaker=f"{self.model_id}_ru",
+                trust_repo=True,
+                verbose=False,
+            )
+            model.to("cpu")
+            with self.lock:
+                self.model = model
+                self.ready = True
+            tts_log(f"silero {self.model_id} ready")
+        except Exception as error:  # noqa: BLE001
+            self.failed = True
+            tts_log(f"silero {self.model_id} load failed: {error}")
+
+    def wait_ready(self, seconds: float) -> bool:
+        self.ensure_started()
+        deadline = time.time() + seconds
+        while time.time() < deadline:
+            if self.ready:
+                return True
+            if self.failed:
+                return False
+            time.sleep(0.2)
+        return self.ready
+
+    def synth(self, text: str, speaker: str, pitch: float) -> tuple[np.ndarray, int] | None:
+        self.ensure_started()
+        with self.lock:
+            if not self.ready or self.model is None:
+                return None
+            try:
+                audio = self.model.apply_tts(
+                    text=text,
+                    speaker=speaker,
+                    sample_rate=48000,
+                    put_accent=True,
+                    put_yo=True,
+                )
+                data = audio.detach().cpu().numpy().astype(np.float32).squeeze()
+                if len(data) > 1:
+                    factor = max(0.85, min(1.15, float(pitch)))
+                    count = max(1, int(len(data) / factor))
+                    data = np.interp(
+                        np.linspace(0, len(data), count, endpoint=False),
+                        np.arange(len(data)),
+                        data,
+                    ).astype(np.float32)
+                    # мягкие края, чтобы не щёлкало в начале и конце
+                    fade = min(int(0.012 * 48000), len(data) // 2)
+                    if fade > 0:
+                        data[:fade] *= np.linspace(0.0, 1.0, fade, dtype=np.float32)
+                        data[-fade:] *= np.linspace(1.0, 0.0, fade, dtype=np.float32)
+                return data, 48000
+            except Exception as error:  # noqa: BLE001
+                tts_log(f"silero synth failed: {error}")
+                return None
+
+
+class Speaker:
+    """Озвучка Silero, при недоступности — SAPI."""
+
+    def __init__(self) -> None:
+        self.queue: queue.Queue[tuple[str, float, str, str] | None] = queue.Queue()
+        self.active = False
+        self.models: dict[str, SileroVoice] = {}
+        self.thread = threading.Thread(target=self._loop, daemon=True)
+        self.thread.start()
+
+    def say(self, text: str, pitch: float, speaker: str, model: str) -> None:
+        self.queue.put((text, pitch, speaker, model))
+
+    def stop(self) -> None:
+        try:
+            sd.stop()
+        except Exception:
+            pass
+
+    def shutdown(self) -> None:
+        self.queue.put(None)
+
+    def _model(self, model_id: str) -> SileroVoice:
+        key = model_id if model_id in ("v4", "v5") else "v5"
+        if key not in self.models:
+            self.models[key] = SileroVoice(key)
+        return self.models[key]
+
+    def _loop(self) -> None:
+        while True:
+            item = self.queue.get()
+            if item is None:
+                break
+            text, pitch, speaker, model = item
+            try:
+                self._speak(text, pitch, speaker, model)
+            except Exception as error:  # noqa: BLE001
+                emit({"type": "tts_error", "message": str(error)[:300]})
+
+    def _sapi(self, text: str, pitch: float) -> tuple[np.ndarray, int]:
+        try:
+            import pythoncom
+
+            pythoncom.CoInitialize()
+        except Exception:
+            pass
+
+        path = os.path.join(tempfile.gettempdir(), f"jarvis-tts-{int(time.time() * 1000)}.wav")
+        stream = win32com.client.Dispatch("SAPI.SpFileStream")
+        stream.Open(path, 3, False)
+        voice = win32com.client.Dispatch("SAPI.SpVoice")
+        voices = voice.GetVoices()
+        for index in range(voices.Count):
+            candidate = voices.Item(index)
+            if "Irina" in candidate.GetDescription():
+                voice.Voice = candidate
+                break
+        voice.Rate = -1
+        voice.AudioOutputStream = stream
+        voice.Speak(text)
+        stream.Close()
+
+        with wave.open(path, "rb") as source:
+            rate = source.getframerate()
+            frames = source.getnframes()
+            pcm = np.frombuffer(source.readframes(frames), dtype=np.int16).astype(np.float32) / 32768.0
+        try:
+            os.remove(path)
+        except OSError:
+            pass
+
+        if pitch and abs(pitch - 1.0) > 0.01 and len(pcm) > 1:
+            count = max(1, int(len(pcm) / pitch))
+            pcm = np.interp(
+                np.linspace(0, len(pcm), count, endpoint=False),
+                np.arange(len(pcm)),
+                pcm,
+            ).astype(np.float32)
+        return pcm, rate
+
+    def _speak(self, text: str, pitch: float, speaker: str, model: str) -> None:
+        text = text.replace("!", ".").replace("…", "...").strip()
+        text = apply_stress(text, "silero")
+        pcm = None
+        rate = 48000
+
+        engine = self._model(model)
+        if not engine.ready and not engine.wait_ready(20.0):
+            tts_log(f"silero {model} не успел загрузиться")
+
+        if engine.ready:
+            result = engine.synth(text, speaker, pitch)
+            if result:
+                pcm, rate = result
+                tts_log(f"silero {model} {speaker} {len(pcm) / rate:.1f}s")
+
+        if pcm is None:
+            pcm, rate = self._sapi(text, pitch)
+            tts_log(f"sapi {len(pcm) / rate:.1f}s pitch={pitch}")
+
+        peak = float(np.max(np.abs(pcm))) if len(pcm) else 0.0
+        if peak > 0.001:
+            pcm = (pcm / peak) * 0.82
+
+        device = pick_output_device()
+        tts_log(f"play {len(pcm) / rate:.1f}s rate={rate} device={device} peak={peak:.3f}")
+
+        emit({"type": "tts_start"})
+        self.active = True
+        if os.environ.get("JARVIS_TTS_MUTE"):
+            time.sleep(min(len(pcm) / rate, 8.0))
+        else:
+            sd.play(pcm, rate, device=device)
+            sd.wait()
+        self.active = False
+        emit({"type": "tts_end"})
+
+
