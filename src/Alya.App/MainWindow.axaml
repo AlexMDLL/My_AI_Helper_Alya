@@ -10,6 +10,23 @@
         Background="Transparent"
         Topmost="True"
         WindowStartupLocation="Manual">
+  <Window.Styles>
+    <Style Selector="Button.send">
+      <Setter Property="Transitions">
+        <Transitions>
+          <BrushTransition Property="Background" Duration="0:0:0.18"/>
+          <DoubleTransition Property="Opacity" Duration="0:0:0.18"/>
+        </Transitions>
+      </Setter>
+    </Style>
+    <Style Selector="Button.send:pointerover">
+      <Setter Property="Background" Value="#5EEAD4"/>
+      <Setter Property="Opacity" Value="0.95"/>
+    </Style>
+    <Style Selector="Button#CloseButton:pointerover">
+      <Setter Property="Foreground" Value="#FF7B8C"/>
+    </Style>
+  </Window.Styles>
   <Grid ColumnDefinitions="380,*">
 
     <Border Grid.Column="0" x:Name="ChatPanel" CornerRadius="20"
@@ -69,7 +86,7 @@
           <Grid ColumnDefinitions="*,Auto">
             <TextBox x:Name="InputBox" Watermark="Сообщение…" Background="Transparent" BorderThickness="0"
                      FontSize="13" VerticalContentAlignment="Center" Padding="6,0"/>
-            <Button Grid.Column="1" x:Name="SendButton" Content="→" Width="40" Height="36" CornerRadius="13"
+            <Button Grid.Column="1" x:Name="SendButton" Classes="send" Content="→" Width="40" Height="36" CornerRadius="13"
                     Background="#38BDF8" Foreground="#06232B" FontWeight="Bold" FontSize="16"/>
           </Grid>
         </Border>

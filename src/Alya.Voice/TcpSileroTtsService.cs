@@ -37,7 +37,7 @@ public sealed class TcpSileroTtsService : ITtsService, IDisposable
     public bool Available => File.Exists(_bridge) && File.Exists(_python);
     public event Action<string>? OnEvent;
     public string Speaker { get; set; } = "xenia";
-    public double Pitch { get; set; } = 0.97;
+    public double Pitch { get; set; } = 1.1;
 
     public Task SpeakAsync(string text, string emotion = "neutral", CancellationToken cancellationToken = default)
     {
