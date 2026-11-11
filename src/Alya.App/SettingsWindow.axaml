@@ -88,7 +88,7 @@
     </Style>
   </Window.Styles>
 
-  <Border CornerRadius="18" Background="#FF0D1522" BorderBrush="#33A7D8FF" BorderThickness="1" Margin="0">
+  <Border CornerRadius="18" Background="#F20D1522" BorderBrush="#33A7D8FF" BorderThickness="1" Margin="0">
     <Grid RowDefinitions="Auto,Auto,*,Auto">
 
       <Border Grid.Row="0" x:Name="TitleBar" Padding="16,12" CornerRadius="18,18,0,0" Background="#331E3348">
@@ -175,10 +175,6 @@
             <CheckBox x:Name="PetEnabledBox" Content="Поглаживания" Margin="0,4,0,0"/>
             <TextBlock Text="Кадров в секунду" Classes="label"/>
             <NumericUpDown x:Name="FpsBox" Minimum="24" Maximum="240" Increment="12"/>
-            <TextBlock x:Name="ScaleLabel" Text="Размер — 1.00" Classes="label"/>
-            <Slider x:Name="ScaleSlider" Minimum="0.6" Maximum="1.3" TickFrequency="0.01"/>
-            <TextBlock x:Name="OffsetLabel" Text="Сдвиг — 0 px" Classes="label"/>
-            <Slider x:Name="OffsetSlider" Minimum="-100" Maximum="200" TickFrequency="1"/>
             <TextBlock x:Name="OpacityLabel" Text="Прозрачность — 100%" Classes="label"/>
             <Slider x:Name="OpacitySlider" Minimum="0.6" Maximum="1" TickFrequency="0.02"/>
             <TextBlock Text="Цвет акцента" Classes="label"/>

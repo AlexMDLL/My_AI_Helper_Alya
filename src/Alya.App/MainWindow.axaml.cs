@@ -278,6 +278,7 @@ public partial class MainWindow : Window
         {
             ApplyWindowMode();
             UpdateWindowSize();
+            AnimateCharacterIn();
             StatusText.Text = $"голос: {(_silero.Available ? "Silero" : _piper.Available ? "Piper" : "Windows")}";
             LoadCharacter();
             _voiceInput.TextRecognized += OnVoiceText;
@@ -788,6 +789,7 @@ public partial class MainWindow : Window
     private void SetChatVisible(bool visible)
     {
         ChatPanel.IsVisible = visible;
+        if (visible) AnimateChat();
         _lastActivity = DateTime.Now;
         if (!_settings.Fullscreen) UpdateWindowSize();
     }
@@ -828,6 +830,37 @@ public partial class MainWindow : Window
         UpdateWindowSize();
     }
 
+    private void AnimateChat()
+    {
+        ChatPanel.Opacity = 0;
+        var started = DateTime.UtcNow;
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
+        timer.Tick += (_, _) =>
+        {
+            var progress = Math.Clamp((DateTime.UtcNow - started).TotalMilliseconds / 220.0, 0, 1);
+            ChatPanel.Opacity = 1 - Math.Pow(1 - progress, 3);
+            if (progress < 1) return;
+            timer.Stop();
+            ChatPanel.Opacity = 1;
+        };
+        timer.Start();
+    }
+
+    private void AnimateCharacterIn()
+    {
+        CharacterImage.Opacity = 0;
+        var started = DateTime.UtcNow;
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
+        timer.Tick += (_, _) =>
+        {
+            var progress = Math.Clamp((DateTime.UtcNow - started).TotalMilliseconds / 500.0, 0, 1);
+            CharacterImage.Opacity = 1 - Math.Pow(1 - progress, 3);
+            if (progress < 1) return;
+            timer.Stop();
+            CharacterImage.Opacity = 1;
+        };
+        timer.Start();
+    }
     private void ApplyCharacterLayout()
     {
         CharacterImage.RenderTransform = null;

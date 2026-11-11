@@ -20,13 +20,11 @@ public partial class SettingsWindow : Window
         FpsBox.Value = _settings.Fps;
         PitchSlider.Value = _settings.Pitch;
         AutostartBox.IsChecked = _settings.Autostart;
-        ScaleSlider.Value = _settings.PersonaScale;
         FullscreenBox.IsChecked = _settings.Fullscreen;
         DragEnabledBox.IsChecked = _settings.DragEnabled;
         FallEnabledBox.IsChecked = _settings.FallEnabled;
         PetEnabledBox.IsChecked = _settings.PetEnabled;
         AlwaysListenBox.IsChecked = _settings.AlwaysListen;
-        OffsetSlider.Value = _settings.PersonaOffset;
         BubblesBox.IsChecked = _settings.Bubbles;
         TtsEnabled.IsChecked = _settings.TtsEnabled;
         CareBox.IsChecked = _settings.Care;
@@ -41,8 +39,6 @@ public partial class SettingsWindow : Window
         });
         OpacitySlider.Value = 1;
         UpdateLabels();
-        Opacity = 1;
-        RefreshAccent();
         UpdateRgbFromAccent();
         HexBox.Text = _accent;
         HexBox.TextChanged += (_, _) =>
@@ -92,22 +88,6 @@ public partial class SettingsWindow : Window
         GreenSlider.PropertyChanged += (_, args) => { if (args.Property == Slider.ValueProperty) UpdateAccentFromRgb(); };
         BlueSlider.PropertyChanged += (_, args) => { if (args.Property == Slider.ValueProperty) UpdateAccentFromRgb(); };
 
-        ScaleSlider.PropertyChanged += (_, args) =>
-        {
-            if (args.Property != Slider.ValueProperty) return;
-            _settings.PersonaScale = Math.Round(ScaleSlider.Value, 2);
-            _settings.PersonaOffset = (int)OffsetSlider.Value;
-            UpdateLabels();
-            _settings.Save();
-        };
-        OffsetSlider.PropertyChanged += (_, args) =>
-        {
-            if (args.Property != Slider.ValueProperty) return;
-            _settings.PersonaScale = Math.Round(ScaleSlider.Value, 2);
-            _settings.PersonaOffset = (int)OffsetSlider.Value;
-            UpdateLabels();
-            _settings.Save();
-        };
 
         PitchSlider.PropertyChanged += (_, args) => { if (args.Property == Slider.ValueProperty) UpdateLabels(); };
         OpacitySlider.PropertyChanged += (_, args) => { if (args.Property == Slider.ValueProperty) UpdateLabels(); };
@@ -122,7 +102,18 @@ public partial class SettingsWindow : Window
             BeginMoveDrag(args);
         };
 
-        Opacity = 1;
+        Opacity = 0;
+        var started = DateTime.UtcNow;
+        var fade = new Avalonia.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
+        fade.Tick += (_, _) =>
+        {
+            var progress = Math.Clamp((DateTime.UtcNow - started).TotalMilliseconds / 240.0, 0, 1);
+            Opacity = 1 - Math.Pow(1 - progress, 3);
+            if (progress < 1) return;
+            fade.Stop();
+            Opacity = 1;
+        };
+        fade.Start();
 
         SaveButton.Click += (_, _) => Save();
         CancelButton.Click += (_, _) => Close();
@@ -255,8 +246,6 @@ public partial class SettingsWindow : Window
     {
         PitchLabel.Text = $"Тембр — {PitchSlider.Value:0.00}";
         OpacityLabel.Text = $"Прозрачность — {(int)Math.Round(OpacitySlider.Value * 100)}%";
-        ScaleLabel.Text = $"Размер — {ScaleSlider.Value:0.00}";
-        OffsetLabel.Text = $"Сдвиг — {(int)OffsetSlider.Value} px";
     }
     private void Save()
     {
@@ -281,8 +270,6 @@ public partial class SettingsWindow : Window
         _settings.PetEnabled = PetEnabledBox.IsChecked == true;
         _settings.AlwaysListen = AlwaysListenBox.IsChecked == true;
         _settings.Care = CareBox.IsChecked == true;
-        _settings.PersonaScale = Math.Round(ScaleSlider.Value, 2);
-        _settings.PersonaOffset = (int)OffsetSlider.Value;
         _settings.Temperature = Math.Round((double)(TemperatureBox.Value ?? 0.8m), 2);
         _settings.Opacity = Math.Clamp(OpacitySlider.Value, 0.6, 1);
         _settings.Accent = _accent;
