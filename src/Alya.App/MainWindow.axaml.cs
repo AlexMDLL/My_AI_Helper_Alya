@@ -19,6 +19,7 @@ public partial class MainWindow : Window
 {
     private readonly WindowsSystemController _system = new();
     private readonly SteamLibrary _steam = new();
+    private readonly MemoryStore _memory = MemoryStore.Load();
     private readonly TcpSileroTtsService _tts = new();
     private OllamaLlmClient _llm = new();
     private AlyaSettings _settings = new();
@@ -90,6 +91,7 @@ public partial class MainWindow : Window
         _llm = new OllamaLlmClient(_settings.Model);
         _tts.Speaker = _settings.Speaker;
         _tts.Pitch = _settings.Pitch;
+        _llm.ExtraContext = _memory.ToPrompt();
         MessagesList.ItemsSource = _messages;
         _history.AddRange(HistoryStore.Load());
         foreach (var old in _history.TakeLast(6))
@@ -384,6 +386,37 @@ public partial class MainWindow : Window
             ? $"Запускаю {name}."
             : null;
     }
+    private string? TryMemoryCommand(string text)
+    {
+        var value = text.Trim();
+        var lower = value.ToLowerInvariant();
+        if (lower.StartsWith("запомни"))
+        {
+            var fact = Regex.Replace(value, "^запомни,?\\s*(что\\s+)?", string.Empty, RegexOptions.IgnoreCase).Trim();
+            if (fact.Length == 0) return "Что запомнить-то?";
+            _memory.AddFact(fact);
+            _llm.ExtraContext = _memory.ToPrompt();
+            return $"Запомнила: {fact}";
+        }
+        if (lower.StartsWith("правило"))
+        {
+            var rule = Regex.Replace(value, "^правило\\s*:?\\s*", string.Empty, RegexOptions.IgnoreCase).Trim();
+            if (rule.Length == 0) return "Какое правило?";
+            _memory.AddRule(rule);
+            _llm.ExtraContext = _memory.ToPrompt();
+            return "Хорошо, буду соблюдать.";
+        }
+        if (lower.Contains("что ты помнишь") || lower.Contains("что помнишь"))
+        {
+            if (_memory.Facts.Count == 0 && _memory.Rules.Count == 0) return "Пока ничего не запоминала.";
+            var parts = new List<string>();
+            if (_memory.Facts.Count > 0) parts.Add("Факты: " + string.Join("; ", _memory.Facts));
+            if (_memory.Rules.Count > 0) parts.Add("Правила: " + string.Join("; ", _memory.Rules));
+            return string.Join(". ", parts);
+        }
+        return null;
+    }
+
     private void DetectLaunches()
     {
         if (_talking) return;
@@ -554,7 +587,7 @@ public partial class MainWindow : Window
         string reply;
         try
         {
-            reply = TryLaunchGame(text) ?? await _llm.CompleteAsync(_history);
+            reply = TryMemoryCommand(text) ?? TryLaunchGame(text) ?? await _llm.CompleteAsync(_history);
         }
         catch (Exception error)
         {
