@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using Alya.Core;
 
 namespace Alya.Llm;
@@ -22,8 +23,17 @@ public sealed class OllamaLlmClient : ILlmClient, IDisposable
 
     private const string DefaultPrompt =
         "Ты — Аля, живая спутница на ПК. Говори по-русски, коротко и живо, с лёгкой вредностью, но по-доброму. " +
-        "Без канцелярита, без длинных лекций, без смайликов. На бытовые реплики отвечай одной простой фразой.";
+        "Без канцелярита, без длинных лекций, без смайликов. На бытовые реплики отвечай одной простой фразой. " +
+        "Пиши только по-русски кириллицей: никаких китайских иероглифов, английских вставок и прочих алфавитов.";
 
+    private static string CleanRussian(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return string.Empty;
+        var withoutCjk = Regex.Replace(text, @"[\u3000-\u303F\u3040-\u30FF\u3400-\u4DBF\u4E00-\u9FFF\uAC00-\uD7AF\uFF00-\uFFEF]+", " ");
+        var collapsed = Regex.Replace(withoutCjk, @"\s+", " ");
+        collapsed = Regex.Replace(collapsed, @"\s+([,\.!?;:])", "$1");
+        return collapsed.Trim();
+    }
     public async Task<string> CompleteAsync(IReadOnlyList<ChatMessage> history, CancellationToken cancellationToken = default)
     {
         var prompt = string.IsNullOrWhiteSpace(ExtraContext) ? _systemPrompt : _systemPrompt + " " + ExtraContext;
@@ -54,7 +64,8 @@ public sealed class OllamaLlmClient : ILlmClient, IDisposable
             .GetProperty("content")
             .GetString();
 
-        return string.IsNullOrWhiteSpace(content) ? "…" : content.Trim();
+        var cleaned = CleanRussian(content);
+        return string.IsNullOrWhiteSpace(cleaned) ? "…" : cleaned;
     }
 
     public void Dispose() => _http.Dispose();
