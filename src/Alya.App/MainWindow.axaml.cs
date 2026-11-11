@@ -1067,6 +1067,16 @@ public partial class MainWindow : Window
         var lower = target.ToLowerInvariant();
         var processes = new List<string>();
         if (lower.Contains("форт") || lower.Contains("fortnite")) processes.Add("FortniteClient-Win64-Shipping");
+        else if (lower.Contains("дбд") || lower.Contains("dbd") || lower.Contains("дед бай") || lower.Contains("dead by daylight")) { processes.Add("DeadByDaylight-Win64-Shipping"); processes.Add("DeadByDaylight"); }
+        else if (lower.Contains("кс2") || lower.Contains("cs2") || lower.Contains("кс ") || lower.Equals("кс") || lower.Contains("контр") || lower.Contains("counter-strike")) processes.Add("cs2");
+        else if (lower.Contains("варфейс") || lower.Contains("warface")) { processes.Add("GameClient"); processes.Add("Warface"); }
+        else if (lower.Contains("дота") || lower.Contains("dota")) processes.Add("dota2");
+        else if (lower.Contains("раст") || lower.Contains("rust")) processes.Add("RustClient");
+        else if (lower.Contains("пабг") || lower.Contains("pubg")) processes.Add("TslGame");
+        else if (lower.Contains("апекс") || lower.Contains("apex")) processes.Add("r5apex");
+        else if (lower.Contains("террари") || lower.Contains("terraria")) processes.Add("Terraria");
+        else if (lower.Contains("обои") || lower.Contains("wallpaper")) processes.Add("wallpaper64");
+        else if (lower.Contains("саундпад") || lower.Contains("soundpad")) processes.Add("Soundpad");
         else if (lower.Contains("эпик") || lower.Contains("epic")) processes.Add("EpicGamesLauncher");
         else if (lower.Contains("стим") || lower.Contains("steam")) processes.Add("steam");
         else if (lower.Contains("телег") || lower.Contains("telegram")) processes.Add("Telegram");

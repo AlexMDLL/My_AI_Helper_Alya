@@ -82,7 +82,22 @@ public sealed class LlmTools
                 case "close_app":
                 {
                     var target = Arg("name");
-                    return _system.Close(target) ? $"Закрыла {target}." : $"{target} не запущено.";
+                    var lower = target.ToLowerInvariant();
+                    var processes = new List<string>();
+                    if (lower.Contains("дбд") || lower.Contains("dbd") || lower.Contains("dead by daylight")) { processes.Add("DeadByDaylight-Win64-Shipping"); processes.Add("DeadByDaylight"); }
+                    else if (lower.Contains("кс") || lower.Contains("cs2") || lower.Contains("counter-strike")) processes.Add("cs2");
+                    else if (lower.Contains("варфейс") || lower.Contains("warface")) { processes.Add("GameClient"); processes.Add("Warface"); }
+                    else if (lower.Contains("дота") || lower.Contains("dota")) processes.Add("dota2");
+                    else if (lower.Contains("раст") || lower.Contains("rust")) processes.Add("RustClient");
+                    else if (lower.Contains("пабг") || lower.Contains("pubg")) processes.Add("TslGame");
+                    else if (lower.Contains("апекс") || lower.Contains("apex")) processes.Add("r5apex");
+                    else if (lower.Contains("террари") || lower.Contains("terraria")) processes.Add("Terraria");
+                    else if (lower.Contains("саундпад") || lower.Contains("soundpad")) processes.Add("Soundpad");
+                    else if (lower.Contains("обои") || lower.Contains("wallpaper")) processes.Add("wallpaper64");
+                    else processes.Add(target);
+                    var closed = false;
+                    foreach (var process in processes) closed |= _system.Close(process);
+                    return closed ? $"Закрыла {target}." : $"{target} не запущено.";
                 }
                 case "media":
                 {
