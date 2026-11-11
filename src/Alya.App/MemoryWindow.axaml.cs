@@ -10,6 +10,11 @@ public partial class MemoryWindow : Window
     {
         InitializeComponent();
         CloseButton.Click += (_, _) => Close();
+        HeaderCloseButton.Click += (_, _) => Close();
+        TitleBar.PointerPressed += (_, e) =>
+        {
+            if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) BeginMoveDrag(e);
+        };
         DeleteButton.IsVisible = false;
         DeleteButton.Click += (_, _) => DeleteSelected();
         Graph.SelectionChanged += OnSelected;

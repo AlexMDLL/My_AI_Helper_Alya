@@ -37,6 +37,7 @@ public sealed class MemoryGraph : Control
     private double _time;
     private double _appear;
     private GraphNode? _hover;
+    private bool _autoZoomed;
 
     public event Action<GraphNode?>? SelectionChanged;
 
@@ -158,7 +159,7 @@ public sealed class MemoryGraph : Control
     public override void Render(DrawingContext context)
     {
         base.Render(context);
-        var background = new SolidColorBrush(Color.Parse("#070B14"));
+        var background = new SolidColorBrush(Color.Parse("#C4070B14"));
         context.FillRectangle(background, new Rect(Bounds.Size));
         if (_nodes.Count == 0)
         {
@@ -230,8 +231,12 @@ public sealed class MemoryGraph : Control
         {
             _selected = node;
             SelectionChanged?.Invoke(node);
-            _zoomTarget = node;
-            _targetZoom = 2.1;
+            if (!_autoZoomed)
+            {
+                _zoomTarget = node;
+                _targetZoom = 1.9;
+                _autoZoomed = true;
+            }
             _timer?.Start();
         }
         else
@@ -284,8 +289,8 @@ public sealed class MemoryGraph : Control
     {
         if (_zoomTarget is null) return;
         var target = new Point(Bounds.Width / 2 - _zoomTarget.X * _targetZoom, Bounds.Height / 2 - _zoomTarget.Y * _targetZoom);
-        _zoom += (_targetZoom - _zoom) * 0.18;
-        _pan += (target - _pan) * 0.18;
+        _zoom += (_targetZoom - _zoom) * 0.07;
+        _pan += (target - _pan) * 0.07;
         if (Math.Abs(_zoom - _targetZoom) < 0.01 && Math.Abs(target.X - _pan.X) + Math.Abs(target.Y - _pan.Y) < 1)
         {
             _zoom = _targetZoom;
