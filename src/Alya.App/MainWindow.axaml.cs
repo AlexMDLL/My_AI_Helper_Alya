@@ -248,7 +248,11 @@ public partial class MainWindow : Window
             var settings = new MenuItem { Header = "Настройки" };
             settings.Click += (_, _) => OpenSettings();
             var chat = new MenuItem { Header = ChatPanel.IsVisible ? "Скрыть чат" : "Показать чат" };
-            chat.Click += (_, _) => ChatPanel.IsVisible = !ChatPanel.IsVisible;
+            chat.Click += (_, _) =>
+            {
+                _lastActivity = DateTime.Now;
+                ChatPanel.IsVisible = !ChatPanel.IsVisible;
+            };
             var drag = new MenuItem { Header = (_touchMode == "drag" ? "✓ " : "") + "Перетаскивание" };
             drag.Click += (_, _) => _touchMode = "drag";
             var pet = new MenuItem { Header = (_touchMode == "pet" ? "✓ " : "") + "Поглаживания" };
