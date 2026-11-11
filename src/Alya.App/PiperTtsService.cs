@@ -58,6 +58,10 @@ public sealed class PiperTtsService : ITtsService, IDisposable
                 info.ArgumentList.Add(wav);
                 info.ArgumentList.Add("--espeak_data");
                 info.ArgumentList.Add(_espeakData.Replace('\\', '/'));
+                info.ArgumentList.Add("--length_scale");
+                info.ArgumentList.Add("1.08");
+                info.ArgumentList.Add("--noise_w");
+                info.ArgumentList.Add("0.75");
 
                 using var process = Process.Start(info);
                 if (process is null) return Task.CompletedTask;
@@ -78,7 +82,7 @@ public sealed class PiperTtsService : ITtsService, IDisposable
             try
             {
                 if (!File.Exists(wav)) return;
-                PitchShift(wav, 1.0 + (Pitch - 1.0) * 0.85);
+                PitchShift(wav, 1.0 + (Pitch - 1.0) * 0.6);
                 OnEvent?.Invoke("tts_start");
                 using var player = new SoundPlayer(wav);
                 player.PlaySync();
