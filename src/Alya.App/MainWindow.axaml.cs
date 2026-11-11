@@ -635,6 +635,32 @@ public partial class MainWindow : Window
         var ok = _system.Launch(resolved);
         return ok ? $"Открываю {target}." : $"Не нашла {target}.";
     }
+    private string? TryCloseApp(string text)
+    {
+        var match = Regex.Match(text.Trim(), @"(закрой|закрыть|выключи|заверши|убей)\s+(.+)$", RegexOptions.IgnoreCase);
+        if (!match.Success) return null;
+        var target = match.Groups[2].Value.Trim().Trim('.', '!', '?', ',');
+        if (target.Length == 0) return null;
+        var lower = target.ToLowerInvariant();
+        var processes = new List<string>();
+        if (lower.Contains("форт") || lower.Contains("fortnite")) processes.Add("FortniteClient-Win64-Shipping");
+        else if (lower.Contains("эпик") || lower.Contains("epic")) processes.Add("EpicGamesLauncher");
+        else if (lower.Contains("стим") || lower.Contains("steam")) processes.Add("steam");
+        else if (lower.Contains("телег") || lower.Contains("telegram")) processes.Add("Telegram");
+        else if (lower.Contains("дискорд") || lower.Contains("discord")) processes.Add("Discord");
+        else if (lower.Contains("хром") || lower.Contains("chrome")) processes.Add("chrome");
+        else if (lower.Contains("блокнот") || lower.Contains("notepad")) processes.Add("notepad");
+        else if (lower.Contains("калькул") || lower.Contains("calc")) processes.Add("calc");
+        else if (lower.Contains("ворд") || lower.Contains("word")) processes.Add("winword");
+        else if (lower.Contains("эксель") || lower.Contains("excel")) processes.Add("excel");
+        else if (lower.Contains("спотиф") || lower.Contains("spotify")) processes.Add("Spotify");
+        else if (lower.Contains("код") || lower.Contains("code")) processes.Add("Code");
+        else processes.Add(target);
+
+        var closed = false;
+        foreach (var process in processes) closed |= _system.Close(process);
+        return closed ? $"Закрываю {target}." : $"{target} и так не запущено.";
+    }
     private string? TryLaunchGame(string text)
     {
         var match = Regex.Match(text, @"(запусти|включи|открой|поиграем в)\s+(.+)", RegexOptions.IgnoreCase);
@@ -1064,7 +1090,7 @@ public partial class MainWindow : Window
         string reply;
         try
         {
-            reply = TryMemoryCommand(text) ?? TryOpenApp(text) ?? TryLaunchGame(text) ?? await _llm.CompleteAsync(_history);
+            reply = TryMemoryCommand(text) ?? TryCloseApp(text) ?? TryOpenApp(text) ?? TryLaunchGame(text) ?? await _llm.CompleteAsync(_history);
         }
         catch (Exception error)
         {
