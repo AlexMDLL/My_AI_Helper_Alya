@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Layout;
 using Avalonia.Media;
 
 namespace Alya.App;
@@ -16,9 +17,57 @@ public partial class MemoryWindow : Window
     private void Load()
     {
         var memory = MemoryStore.Load();
-        FactsText.Text = memory.Facts.Count == 0 ? "Пока ничего не запоминала." : string.Join("\n• ", new[] { "" }.Concat(memory.Facts)).Trim();
-        RulesText.Text = memory.Rules.Count == 0 ? "Правил нет." : string.Join("\n• ", new[] { "" }.Concat(memory.Rules)).Trim();
+        Build(FactsPanel, memory.Facts, isFact: true);
+        Build(RulesPanel, memory.Rules, isFact: false);
         LinksText.Text = BuildLinks(memory);
+    }
+
+    private void Build(StackPanel panel, List<string> items, bool isFact)
+    {
+        panel.Children.Clear();
+        if (items.Count == 0)
+        {
+            panel.Children.Add(new TextBlock
+            {
+                Text = isFact ? "Пока ничего не запоминала." : "Правил нет.",
+                Foreground = new SolidColorBrush(Color.Parse("#9FB2C9")),
+                FontSize = 12
+            });
+            return;
+        }
+        foreach (var item in items)
+        {
+            var row = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
+            row.Children.Add(new TextBlock
+            {
+                Text = "• " + item,
+                TextWrapping = TextWrapping.Wrap,
+                Foreground = new SolidColorBrush(Color.Parse("#E6EDF5")),
+                FontSize = 12.5,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+            var remove = new Button
+            {
+                Content = "✕",
+                Width = 28,
+                Height = 24,
+                Padding = new Avalonia.Thickness(0),
+                Background = Brushes.Transparent,
+                Foreground = new SolidColorBrush(Color.Parse("#FF7B8C"))
+            };
+            Grid.SetColumn(remove, 1);
+            var value = item;
+            remove.Click += (_, _) =>
+            {
+                var current = MemoryStore.Load();
+                if (isFact) current.Facts.RemoveAll(f => f == value);
+                else current.Rules.RemoveAll(r => r == value);
+                current.Save();
+                Load();
+            };
+            row.Children.Add(remove);
+            panel.Children.Add(row);
+        }
     }
 
     private static string BuildLinks(MemoryStore memory)

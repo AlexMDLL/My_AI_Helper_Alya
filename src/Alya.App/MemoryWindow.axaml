@@ -22,9 +22,9 @@
       <ScrollViewer Grid.Row="1" Margin="16,12">
         <StackPanel Spacing="10">
           <TextBlock Text="Факты" Foreground="#5EEAD4" FontSize="12" FontWeight="SemiBold"/>
-          <TextBlock x:Name="FactsText" Text="—" TextWrapping="Wrap" Foreground="#E6EDF5" FontSize="12.5"/>
+          <StackPanel x:Name="FactsPanel" Spacing="4"/>
           <TextBlock Text="Правила" Foreground="#5EEAD4" FontSize="12" FontWeight="SemiBold" Margin="0,8,0,0"/>
-          <TextBlock x:Name="RulesText" Text="—" TextWrapping="Wrap" Foreground="#E6EDF5" FontSize="12.5"/>
+          <StackPanel x:Name="RulesPanel" Spacing="4"/>
           <TextBlock Text="Связи" Foreground="#5EEAD4" FontSize="12" FontWeight="SemiBold" Margin="0,8,0,0"/>
           <TextBlock x:Name="LinksText" Text="—" TextWrapping="Wrap" Foreground="#9FB2C9" FontSize="12"/>
         </StackPanel>

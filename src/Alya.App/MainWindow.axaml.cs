@@ -702,6 +702,31 @@ public partial class MainWindow : Window
         });
     }
 
+    private async Task ExtractFactAsync(string userText)
+    {
+        try
+        {
+            var lower = userText.ToLowerInvariant();
+            if (userText.Length < 12) return;
+            if (!lower.Contains(" я ") && !lower.Contains("меня") && !lower.Contains("мне") && !lower.Contains("мой") && !lower.Contains("моя") && !lower.Contains("живу")) return;
+            using var client = new Alya.Llm.OllamaLlmClient(_settings.Model) { Temperature = 0.2 };
+            var history = new List<ChatMessage>
+            {
+                new("system", "Ты извлекаешь факты о пользователе. Если в сообщении есть новый устойчивый факт (имя, город, работа, привычка, предпочтение) — верни его одной короткой фразой от третьего лица. Если факта нет — верни ровно: НЕТ", DateTimeOffset.Now),
+                new("user", userText, DateTimeOffset.Now)
+            };
+            var result = (await client.CompleteAsync(history)).Trim();
+            if (result.Length == 0 || result.Length > 140) return;
+            if (result.Equals("НЕТ", StringComparison.OrdinalIgnoreCase) || result.Contains("НЕТ")) return;
+            _memory.AddFact(result);
+            _llm.ExtraContext = BuildContext();
+            Dispatcher.UIThread.Post(() => StatusText.Text = "запомнила новое");
+        }
+        catch
+        {
+            // извлечение не критично
+        }
+    }
     private void StopSpeech()
     {
         try
@@ -1505,6 +1530,7 @@ public partial class MainWindow : Window
         HistoryStore.Save(_history);
         if (streamedBubble is not null) streamedBubble.Text = reply;
         else Add("alya", reply);
+        if (_settings.AutoFacts) _ = ExtractFactAsync(text);
         StatusText.Text = "говорит…";
         if (_settings.TtsEnabled) await _tts.SpeakAsync(reply, "neutral");
         else StatusText.Text = "на связи";
