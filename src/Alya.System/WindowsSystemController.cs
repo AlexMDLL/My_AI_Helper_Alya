@@ -99,7 +99,15 @@ public sealed class WindowsSystemController : Alya.Core.ISystemController
                         started = true;
                     }
                     return true;
-                case "telegram":
+                case "epic":
+                    var epic = @"C:\Program Files (x86)\Epic Games\Launcher\Portal\Binaries\Win64\EpicGamesLauncher.exe";
+                    if (File.Exists(epic)) { Start(epic); started = true; }
+                    else { Start("com.epicgames.launcher://apps"); started = true; }
+                    return true;
+                case "fortnite":
+                    Start("com.epicgames.launcher://apps/Fortnite?action=launch&silent=true");
+                    started = true;
+                    return true;                case "telegram":
                     var tg = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Telegram Desktop", "Telegram.exe");
                     if (File.Exists(tg)) { Start(tg); started = true; return true; }
                     return false;
