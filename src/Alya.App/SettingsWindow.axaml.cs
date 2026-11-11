@@ -31,6 +31,7 @@ public partial class SettingsWindow : Window
         OpacitySlider.Value = 1;
         Opacity = 1;
         RefreshAccent();
+        UpdateRgbFromAccent();
         RefreshMemory();
 
         NavGeneral.Click += (_, _) => SelectTab(0);
@@ -45,6 +46,7 @@ public partial class SettingsWindow : Window
             swatch.Click += (_, _) =>
             {
                 _accent = (string?)swatch.Tag ?? "#38BDF8";
+                UpdateRgbFromAccent();
                 RefreshAccent();
             };
         }
@@ -53,6 +55,10 @@ public partial class SettingsWindow : Window
         {
             if (args.Property == Slider.ValueProperty) Opacity = Math.Clamp(OpacitySlider.Value, 0.6, 1);
         };
+
+        RedSlider.PropertyChanged += (_, args) => { if (args.Property == Slider.ValueProperty) UpdateAccentFromRgb(); };
+        GreenSlider.PropertyChanged += (_, args) => { if (args.Property == Slider.ValueProperty) UpdateAccentFromRgb(); };
+        BlueSlider.PropertyChanged += (_, args) => { if (args.Property == Slider.ValueProperty) UpdateAccentFromRgb(); };
 
         CheckModelButton.Click += async (_, _) => await CheckOllamaAsync();
         ClearMemoryButton.Click += (_, _) => ClearMemory();
@@ -79,6 +85,34 @@ public partial class SettingsWindow : Window
             var selected = string.Equals((string?)swatch.Tag, _accent, StringComparison.OrdinalIgnoreCase);
             swatch.Classes.Set("selected", selected);
         }
+    }
+
+    private void UpdateRgbFromAccent()
+    {
+        try
+        {
+            var color = Color.Parse(_accent);
+            RedSlider.Value = color.R;
+            GreenSlider.Value = color.G;
+            BlueSlider.Value = color.B;
+        }
+        catch
+        {
+            // некорректный цвет — оставляем текущие значения
+        }
+    }
+
+    private void UpdateAccentFromRgb()
+    {
+        var red = (byte)Math.Clamp((int)RedSlider.Value, 0, 255);
+        var green = (byte)Math.Clamp((int)GreenSlider.Value, 0, 255);
+        var blue = (byte)Math.Clamp((int)BlueSlider.Value, 0, 255);
+        _accent = $"#{red:X2}{green:X2}{blue:X2}";
+        RedValue.Text = red.ToString();
+        GreenValue.Text = green.ToString();
+        BlueValue.Text = blue.ToString();
+        AccentPreview.Background = new SolidColorBrush(Color.FromRgb(red, green, blue));
+        SaveButton.Background = new SolidColorBrush(Color.FromRgb(red, green, blue));
     }
 
     private void RefreshMemory()

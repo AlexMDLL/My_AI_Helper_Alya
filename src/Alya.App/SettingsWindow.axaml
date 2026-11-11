@@ -163,7 +163,19 @@
               <Button x:Name="SwatchPurple" Classes="swatch" Background="#A78BFA" Tag="#A78BFA"/>
               <Button x:Name="SwatchOrange" Classes="swatch" Background="#FB923C" Tag="#FB923C"/>
             </StackPanel>
-            <TextBlock Text="Чем выше FPS — тем плавнее и больше нагрузка." Classes="hint" Margin="0,6,0,0"/>
+            <TextBlock Text="Свой цвет (RGB)" Classes="label"/>
+            <Border x:Name="AccentPreview" Width="38" Height="38" CornerRadius="19" Background="#38BDF8" HorizontalAlignment="Left" Margin="0,4,0,6"/>
+            <Grid ColumnDefinitions="20,*,44" RowDefinitions="Auto,Auto,Auto">
+              <TextBlock Grid.Row="0" Grid.Column="0" Text="R" Classes="label" VerticalAlignment="Center"/>
+              <Slider Grid.Row="0" Grid.Column="1" x:Name="RedSlider" Minimum="0" Maximum="255" Value="56"/>
+              <TextBlock Grid.Row="0" Grid.Column="2" x:Name="RedValue" Text="56" Classes="hint" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+              <TextBlock Grid.Row="1" Grid.Column="0" Text="G" Classes="label" VerticalAlignment="Center"/>
+              <Slider Grid.Row="1" Grid.Column="1" x:Name="GreenSlider" Minimum="0" Maximum="255" Value="189"/>
+              <TextBlock Grid.Row="1" Grid.Column="2" x:Name="GreenValue" Text="189" Classes="hint" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+              <TextBlock Grid.Row="2" Grid.Column="0" Text="B" Classes="label" VerticalAlignment="Center"/>
+              <Slider Grid.Row="2" Grid.Column="1" x:Name="BlueSlider" Minimum="0" Maximum="255" Value="248"/>
+              <TextBlock Grid.Row="2" Grid.Column="2" x:Name="BlueValue" Text="248" Classes="hint" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+            </Grid>            <TextBlock Text="Чем выше FPS — тем плавнее и больше нагрузка." Classes="hint" Margin="0,6,0,0"/>
           </StackPanel>
         </Grid>
       </ScrollViewer>
