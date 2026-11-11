@@ -39,6 +39,53 @@ public sealed class OllamaLlmClient : ILlmClient, IDisposable
         collapsed = Regex.Replace(collapsed, @"\s+([,\.!?;:])", "$1");
         return collapsed.Trim();
     }
+    public async Task<string> CompleteWithToolsAsync(IReadOnlyList<ChatMessage> history, object[] tools, Func<string, JsonElement, Task<string>> executor, CancellationToken cancellationToken = default)
+    {
+        var prompt = string.IsNullOrWhiteSpace(ExtraContext) ? (string.IsNullOrWhiteSpace(Persona) ? _systemPrompt : Persona) : (string.IsNullOrWhiteSpace(Persona) ? _systemPrompt : Persona) + " " + ExtraContext;
+        var messages = new List<object> { new { role = "system", content = prompt } };
+        foreach (var message in history)
+        {
+            messages.Add(new { role = message.Role == "assistant" ? "assistant" : "user", content = message.Content });
+        }
+
+        for (var round = 0; round < 4; round++)
+        {
+            var request = new
+            {
+                model = _model,
+                stream = false,
+                messages,
+                tools,
+                options = new { temperature = Temperature, num_predict = 260 },
+                keep_alive = KeepAlive
+            };
+            using var response = await _http.PostAsJsonAsync("/api/chat", request, cancellationToken);
+            var raw = await response.Content.ReadAsStringAsync(cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new InvalidOperationException($"Ollama {response.StatusCode}: {raw[..Math.Min(200, raw.Length)]}");
+            }
+            using var document = JsonDocument.Parse(raw);
+            var message = document.RootElement.GetProperty("message");
+            var content = message.TryGetProperty("content", out var contentElement) ? contentElement.GetString() ?? string.Empty : string.Empty;
+            var hasTools = message.TryGetProperty("tool_calls", out var calls) && calls.GetArrayLength() > 0;
+            if (!hasTools)
+            {
+                return CleanRussian(content);
+            }
+
+            messages.Add(new { role = "assistant", content, tool_calls = calls });
+            foreach (var call in calls.EnumerateArray())
+            {
+                var function = call.GetProperty("function");
+                var name = function.GetProperty("name").GetString() ?? string.Empty;
+                var arguments = function.TryGetProperty("arguments", out var args) ? args : default;
+                var result = await executor(name, arguments);
+                messages.Add(new { role = "tool", content = result });
+            }
+        }
+        return "Не получилось выполнить команду.";
+    }
     public async Task<string> CompleteStreamingAsync(IReadOnlyList<ChatMessage> history, Action<string> onDelta, CancellationToken cancellationToken = default)
     {
         var prompt = string.IsNullOrWhiteSpace(ExtraContext) ? (string.IsNullOrWhiteSpace(Persona) ? _systemPrompt : Persona) : (string.IsNullOrWhiteSpace(Persona) ? _systemPrompt : Persona) + " " + ExtraContext;

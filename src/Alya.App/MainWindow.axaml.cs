@@ -64,6 +64,7 @@ public partial class MainWindow : Window
     private DispatcherTimer? _pttResetTimer;
     private readonly List<(DateTime Due, string Message)> _reminders = new();
     private DispatcherTimer? _reminderTimer;
+    private LlmTools? _tools;
     private DateTime _lastActivity = DateTime.Now;
     private DispatcherTimer? _hideTimer;
     private DispatcherTimer? _bubbleTimer;
@@ -210,6 +211,8 @@ public partial class MainWindow : Window
         _reminderTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _reminderTimer.Tick += (_, _) => CheckReminders();
         _reminderTimer.Start();
+        _tools = new LlmTools(_system, _steam, _weather, _reminders);
+
         _hideTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _hideTimer.Tick += (_, _) =>
         {
@@ -1540,13 +1543,16 @@ public partial class MainWindow : Window
                 _llmCts = new CancellationTokenSource();
                 try
                 {
-                    reply = await _llm.CompleteStreamingAsync(_history, delta => Dispatcher.UIThread.Post(() => placeholder.Text += delta), _llmCts.Token);
+                    reply = _tools is null
+                        ? await _llm.CompleteStreamingAsync(_history, delta => Dispatcher.UIThread.Post(() => placeholder.Text += delta), _llmCts.Token)
+                        : await _llm.CompleteWithToolsAsync(_history, _tools.Schema, _tools.ExecuteAsync, _llmCts.Token);
                 }
                 catch (OperationCanceledException)
                 {
                     reply = placeholder.Text.Trim();
                     if (string.IsNullOrWhiteSpace(reply)) reply = "Ладно, молчу.";
                 }
+                placeholder.Text = reply;
                 if (string.IsNullOrWhiteSpace(reply)) reply = "…";
                 placeholder.Text = reply;
                 streamedBubble = placeholder;
