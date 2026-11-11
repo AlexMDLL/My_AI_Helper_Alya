@@ -18,6 +18,7 @@ public sealed class TcpSileroTtsService : ITtsService, IDisposable
     private readonly string _bridge;
     private TcpClient? _client;
     private StreamWriter? _writer;
+    private StreamReader? _reader;
     private readonly object _gate = new();
     private Process? _server;
 
@@ -61,16 +62,23 @@ public sealed class TcpSileroTtsService : ITtsService, IDisposable
     {
         lock (_gate)
         {
-            EnsureConnected();
-            if (_writer is null) return;
-            try
+            for (var attempt = 0; attempt < 2; attempt++)
             {
-                _writer.WriteLine(payload);
-                _writer.Flush();
-            }
-            catch
-            {
+                EnsureConnected();
+                if (_writer is null || _reader is null) return;
+                try
+                {
+                    _writer.WriteLine(payload);
+                    _writer.Flush();
+                    var ack = _reader.ReadLine();
+                    if (!string.IsNullOrEmpty(ack)) return;
+                }
+                catch
+                {
+                    // мост не ответил — переподключаемся и пробуем ещё раз
+                }
                 Close();
+                Thread.Sleep(200);
             }
         }
     }
@@ -86,8 +94,10 @@ public sealed class TcpSileroTtsService : ITtsService, IDisposable
             {
                 _client = new TcpClient();
                 _client.Connect(_host, _port);
+                _client.ReceiveTimeout = 15000;
                 var stream = _client.GetStream();
                 _writer = new StreamWriter(stream, new UTF8Encoding(false)) { AutoFlush = false };
+                _reader = new StreamReader(stream, new UTF8Encoding(false));
                 return;
             }
             catch
@@ -130,6 +140,7 @@ public sealed class TcpSileroTtsService : ITtsService, IDisposable
         try
         {
             _writer?.Dispose();
+            _reader?.Dispose();
             _client?.Dispose();
         }
         catch
@@ -137,6 +148,7 @@ public sealed class TcpSileroTtsService : ITtsService, IDisposable
             // ignore
         }
         _writer = null;
+        _reader = null;
         _client = null;
     }
 

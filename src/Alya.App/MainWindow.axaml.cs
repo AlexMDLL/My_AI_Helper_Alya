@@ -100,7 +100,7 @@ public partial class MainWindow : Window
         if (!_scenes.ContainsKey("VideoStand")) return;
 
         PlayScene("VideoStand");
-        _animTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(42) };
+        _animTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
         _animTimer.Tick += (_, _) => Tick();
         _animTimer.Start();
 
@@ -196,7 +196,10 @@ public partial class MainWindow : Window
         {
             _talking = true;
             PlayScene("VideoTalk");
+            StatusText.Text = "говорит…";
             await _tts.SpeakAsync(reply, "neutral");
+            var duration = Math.Clamp(reply.Length * 65, 1200, 12000);
+            await Task.Delay(duration);
         }
         finally
         {
