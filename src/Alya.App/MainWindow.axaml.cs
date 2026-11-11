@@ -25,7 +25,8 @@ public partial class MainWindow : Window
     private readonly MemoryStore _memory = MemoryStore.Load();
     private readonly TcpSileroTtsService _silero = new();
     private readonly SapiTtsService _sapi = new();
-    private ITtsService _tts => _silero.Available ? _silero : _sapi;
+    private readonly PiperTtsService _piper = new();
+    private ITtsService _tts => _piper.Available ? _piper : _silero.Available ? _silero : _sapi;
     private OllamaLlmClient _llm = new();
     private AlyaSettings _settings = new();
     private readonly List<ChatMessage> _history = new();
@@ -98,6 +99,7 @@ public partial class MainWindow : Window
         _silero.Pitch = _settings.Pitch;
         _silero.OnEvent += kind => Dispatcher.UIThread.Post(() => HandleVoiceEvent(kind));
         _sapi.OnEvent += kind => Dispatcher.UIThread.Post(() => HandleVoiceEvent(kind));
+        _piper.OnEvent += kind => Dispatcher.UIThread.Post(() => HandleVoiceEvent(kind));
         _llm.ExtraContext = _memory.ToPrompt();
         MessagesList.ItemsSource = _messages;
         try
@@ -175,7 +177,7 @@ public partial class MainWindow : Window
         {
             var screen = Screens.Primary?.WorkingArea ?? new PixelRect(0, 0, 1920, 1080);
             Position = new PixelPoint(screen.X + screen.Width - 800, screen.Y + 60);
-            StatusText.Text = $"голос: {(_silero.Available ? "Silero" : "Windows")}";
+            StatusText.Text = $"голос: {(_piper.Available ? "Piper" : _silero.Available ? "Silero" : "Windows")}";
             LoadCharacter();
             CreateTray();
             AnimateEntrance();
