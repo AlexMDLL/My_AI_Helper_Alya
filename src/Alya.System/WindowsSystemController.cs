@@ -59,7 +59,10 @@ public sealed class WindowsSystemController : Alya.Core.ISystemController
     private static readonly Dictionary<string, string> Aliases = new(StringComparer.OrdinalIgnoreCase)
     {
         ["хром"] = "chrome",
-        ["браузер"] = "chrome",
+        ["фаерфокс"] = "firefox",
+        ["firefox"] = "firefox",
+        ["файрфокс"] = "firefox",
+        ["браузер"] = "firefox",
         ["гугл"] = "chrome",
         ["телега"] = "telegram",
         ["телеграм"] = "telegram",
@@ -126,7 +129,11 @@ public sealed class WindowsSystemController : Alya.Core.ISystemController
                     });
                     started = true;
                     return true;
-                case "telegram":
+                case "firefox":
+                    var firefox = @"C:\Program Files\Mozilla Firefox\firefox.exe";
+                    if (!File.Exists(firefox)) firefox = @"C:\Program Files (x86)\Mozilla Firefox\firefox.exe";
+                    if (File.Exists(firefox)) { Start(firefox); started = true; return true; }
+                    return false;                case "telegram":
                     var tg = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Telegram Desktop", "Telegram.exe");
                     if (File.Exists(tg)) { Start(tg); started = true; return true; }
                     return false;

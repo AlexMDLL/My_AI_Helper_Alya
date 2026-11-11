@@ -673,7 +673,8 @@ public partial class MainWindow : Window
         else if (lower.Contains("ворд") || lower.Contains("word")) processes.Add("winword");
         else if (lower.Contains("эксель") || lower.Contains("excel")) processes.Add("excel");
         else if (lower.Contains("телег") || lower.Contains("telegram") || lower.Contains("тг")) processes.Add("Telegram");
-        else if (lower.Contains("браузер") || lower.Contains("гугл")) processes.Add("chrome");
+        else if (lower.Contains("фаерфокс") || lower.Contains("firefox") || lower.Contains("файрфокс")) processes.Add("firefox");
+        else if (lower.Contains("браузер") || lower.Contains("гугл")) processes.Add("firefox");
         else if (lower.Contains("паинт") || lower.Contains("paint")) processes.Add("mspaint");
         else if (lower.Contains("фотошоп") || lower.Contains("photoshop")) processes.Add("Photoshop");
         else if (lower.Contains("проводник") || lower.Contains("explorer")) processes.Add("explorer");
