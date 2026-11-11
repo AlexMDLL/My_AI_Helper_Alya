@@ -620,6 +620,7 @@ public partial class MainWindow : Window
 
     private void OnVoiceText(string text)
     {
+        if (_talking) return;
         Dispatcher.UIThread.Post(() =>
         {
             try { File.AppendAllText(Path.Combine(Path.GetTempPath(), "alya-voice.log"), $"{DateTime.Now:HH:mm:ss} ui got: {text}\n"); } catch { }
