@@ -148,6 +148,8 @@ public partial class MainWindow : Window
         {
             Add(old.Role == "user" ? "user" : "alya", old.Content);
         }
+        ChatPanel.IsVisible = false;
+        SpeechBubble.IsVisible = false;
 
         SendButton.Click += (_, _) => Send();
         InputBox.KeyDown += (_, args) =>
