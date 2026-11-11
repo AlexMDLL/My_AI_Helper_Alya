@@ -1269,9 +1269,23 @@ public partial class MainWindow : Window
 
         StatusText.Text = "думает…";
         string reply;
+        Bubble? streamedBubble = null;
         try
         {
-            reply = TryMemoryCommand(text) ?? TryPowerCommand(text) ?? TryCloseApp(text) ?? TryOpenApp(text) ?? TryLaunchGame(text) ?? await TryWeatherAsync(text) ?? await _llm.CompleteAsync(_history);
+            var quick = TryMemoryCommand(text) ?? TryPowerCommand(text) ?? TryCloseApp(text) ?? TryOpenApp(text) ?? TryLaunchGame(text);
+            if (quick is null) quick = await TryWeatherAsync(text);
+            if (quick is not null)
+            {
+                reply = quick;
+            }
+            else
+            {
+                var placeholder = Add("alya", "…");
+                reply = await _llm.CompleteStreamingAsync(_history, delta => Dispatcher.UIThread.Post(() => placeholder.Text += delta));
+                if (string.IsNullOrWhiteSpace(reply)) reply = "…";
+                placeholder.Text = reply;
+                streamedBubble = placeholder;
+            }
         }
         catch (Exception error)
         {
@@ -1279,7 +1293,8 @@ public partial class MainWindow : Window
         }
         _history.Add(new ChatMessage("assistant", reply, DateTimeOffset.Now));
         HistoryStore.Save(_history);
-        Add("alya", reply);
+        if (streamedBubble is not null) streamedBubble.Text = reply;
+        else Add("alya", reply);
         StatusText.Text = "говорит…";
         if (_settings.TtsEnabled) await _tts.SpeakAsync(reply, "neutral");
         else StatusText.Text = "на связи";
@@ -1302,7 +1317,7 @@ public partial class MainWindow : Window
         _bubbleTimer.Start();
     }
 
-    private void Add(string role, string text)
+    private Bubble Add(string role, string text)
     {
         var isUser = role == "user";
         _lastActivity = DateTime.Now;
@@ -1323,6 +1338,7 @@ public partial class MainWindow : Window
             var scroll = MessagesList.Parent as ScrollViewer;
             scroll?.ScrollToEnd();
         });
+        return bubble;
     }
 
     private sealed class SimpleCommand : global::System.Windows.Input.ICommand

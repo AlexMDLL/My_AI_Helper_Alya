@@ -9,7 +9,18 @@ public sealed class Bubble : INotifyPropertyChanged
 {
     private double _opacity;
 
-    public string Text { get; init; } = string.Empty;
+    private string _text = string.Empty;
+
+    public string Text
+    {
+        get => _text;
+        set
+        {
+            if (_text == value) return;
+            _text = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Text)));
+        }
+    }
     public string Time { get; init; } = string.Empty;
     public HorizontalAlignment Alignment { get; init; }
     public IBrush Background { get; init; } = Brushes.Transparent;

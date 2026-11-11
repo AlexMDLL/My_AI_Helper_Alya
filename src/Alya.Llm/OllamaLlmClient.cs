@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
@@ -36,6 +37,55 @@ public sealed class OllamaLlmClient : ILlmClient, IDisposable
         var collapsed = Regex.Replace(withoutCjk, @"\s+", " ");
         collapsed = Regex.Replace(collapsed, @"\s+([,\.!?;:])", "$1");
         return collapsed.Trim();
+    }
+    public async Task<string> CompleteStreamingAsync(IReadOnlyList<ChatMessage> history, Action<string> onDelta, CancellationToken cancellationToken = default)
+    {
+        var prompt = string.IsNullOrWhiteSpace(ExtraContext) ? (string.IsNullOrWhiteSpace(Persona) ? _systemPrompt : Persona) : (string.IsNullOrWhiteSpace(Persona) ? _systemPrompt : Persona) + " " + ExtraContext;
+        var messages = new List<object> { new { role = "system", content = prompt } };
+        foreach (var message in history)
+        {
+            messages.Add(new { role = message.Role == "assistant" ? "assistant" : "user", content = message.Content });
+        }
+        var request = new
+        {
+            model = _model,
+            stream = true,
+            messages,
+            options = new { temperature = Temperature, num_predict = 220 }
+        };
+        using var requestMessage = new HttpRequestMessage(HttpMethod.Post, "/api/chat")
+        {
+            Content = JsonContent.Create(request)
+        };
+        using var response = await _http.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            var raw = await response.Content.ReadAsStringAsync(cancellationToken);
+            throw new InvalidOperationException($"Ollama {response.StatusCode}: {raw[..Math.Min(200, raw.Length)]}");
+        }
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        using var reader = new StreamReader(stream);
+        var builder = new StringBuilder();
+        while (!reader.EndOfStream)
+        {
+            var line = await reader.ReadLineAsync(cancellationToken);
+            if (string.IsNullOrWhiteSpace(line)) continue;
+            try
+            {
+                using var document = JsonDocument.Parse(line);
+                if (!document.RootElement.TryGetProperty("message", out var message)) continue;
+                if (!message.TryGetProperty("content", out var content)) continue;
+                var delta = content.GetString();
+                if (string.IsNullOrEmpty(delta)) continue;
+                builder.Append(delta);
+                onDelta(delta);
+            }
+            catch
+            {
+                // пропускаем битую строку
+            }
+        }
+        return CleanRussian(builder.ToString());
     }
     public async Task<string> CompleteAsync(IReadOnlyList<ChatMessage> history, CancellationToken cancellationToken = default)
     {
