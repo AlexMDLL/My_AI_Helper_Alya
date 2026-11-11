@@ -7,7 +7,7 @@ namespace Alya.Voice;
 
 /// <summary>
 /// Silero TTS через существующий Python-сайдкар (переходный этап).
-/// Даёт текущее качество голоса, пока не готов ONNX-порт.
+/// Команды буферизуются до события "ready", чтобы не потерять первый "speak".
 /// </summary>
 public sealed class SileroSidecarTtsService : ITtsService, IDisposable
 {
@@ -15,6 +15,8 @@ public sealed class SileroSidecarTtsService : ITtsService, IDisposable
     private readonly string _script;
     private Process? _process;
     private readonly object _gate = new();
+    private readonly List<string> _pending = new();
+    private bool _ready;
 
     public SileroSidecarTtsService(string? voiceDirectory = null)
     {
@@ -28,12 +30,12 @@ public sealed class SileroSidecarTtsService : ITtsService, IDisposable
 
     public bool Available => File.Exists(_script) && File.Exists(_python);
 
-    public async Task SpeakAsync(string text, string emotion = "neutral", CancellationToken cancellationToken = default)
+    public Task SpeakAsync(string text, string emotion = "neutral", CancellationToken cancellationToken = default)
     {
         if (!Available)
         {
             Console.WriteLine($"[TTS без сайдкара] {text}");
-            return;
+            return Task.CompletedTask;
         }
 
         EnsureStarted();
@@ -47,14 +49,18 @@ public sealed class SileroSidecarTtsService : ITtsService, IDisposable
             emotion
         });
 
-        Console.WriteLine($"[sidecar] send {payload}");
         lock (_gate)
         {
-            if (_process is null || _process.HasExited) return;
+            if (_process is null || _process.HasExited) return Task.CompletedTask;
+            if (!_ready)
+            {
+                _pending.Add(payload);
+                return Task.CompletedTask;
+            }
             _process.StandardInput.WriteLine(payload);
             _process.StandardInput.Flush();
         }
-        await Task.CompletedTask;
+        return Task.CompletedTask;
     }
 
     private void EnsureStarted()
@@ -62,6 +68,8 @@ public sealed class SileroSidecarTtsService : ITtsService, IDisposable
         lock (_gate)
         {
             if (_process is not null && !_process.HasExited) return;
+            _ready = false;
+            _pending.Clear();
             var info = new ProcessStartInfo(_python)
             {
                 WorkingDirectory = Path.GetDirectoryName(_script)!,
@@ -78,7 +86,19 @@ public sealed class SileroSidecarTtsService : ITtsService, IDisposable
             _process = new Process { StartInfo = info, EnableRaisingEvents = true };
             _process.OutputDataReceived += (_, args) =>
             {
-                if (!string.IsNullOrWhiteSpace(args.Data)) Console.WriteLine($"[voice] {args.Data}");
+                if (string.IsNullOrWhiteSpace(args.Data)) return;
+                Console.WriteLine($"[voice] {args.Data}");
+                if (!args.Data.Contains("\"ready\"")) return;
+                lock (_gate)
+                {
+                    _ready = true;
+                    foreach (var item in _pending)
+                    {
+                        _process?.StandardInput.WriteLine(item);
+                    }
+                    _pending.Clear();
+                    _process?.StandardInput.Flush();
+                }
             };
             _process.ErrorDataReceived += (_, args) =>
             {
@@ -87,8 +107,6 @@ public sealed class SileroSidecarTtsService : ITtsService, IDisposable
             _process.Start();
             _process.BeginOutputReadLine();
             _process.BeginErrorReadLine();
-            _process.StandardInput.WriteLine("{\"cmd\":\"preload\",\"model\":\"v5\"}");
-            _process.StandardInput.Flush();
         }
     }
 
