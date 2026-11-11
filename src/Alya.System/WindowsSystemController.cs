@@ -17,6 +17,9 @@ public sealed class WindowsSystemController : Alya.Core.ISystemController
     [DllImport("user32.dll")]
     private static extern bool ShowWindow(IntPtr handle, int command);
 
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern int GetWindowText(IntPtr handle, global::System.Text.StringBuilder text, int max);
+
     public string? ForegroundProcess()
     {
         var handle = GetForegroundWindow();
@@ -32,6 +35,20 @@ public sealed class WindowsSystemController : Alya.Core.ISystemController
         }
     }
 
+    public string ForegroundWindowTitle()
+    {
+        try
+        {
+            var handle = GetForegroundWindow();
+            var builder = new global::System.Text.StringBuilder(512);
+            GetWindowText(handle, builder, builder.Capacity);
+            return builder.ToString();
+        }
+        catch
+        {
+            return string.Empty;
+        }
+    }
     public IReadOnlyList<string> RunningProcesses() =>
         Process.GetProcesses()
             .Select(process => process.ProcessName.ToLowerInvariant())

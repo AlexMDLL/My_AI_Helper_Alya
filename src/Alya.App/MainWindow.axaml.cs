@@ -46,6 +46,7 @@ public partial class MainWindow : Window
     private DispatcherTimer? _fallTimer;
     private bool _dragging;
     private bool _dragMoved;
+    private bool _hiddenByFilter;
     private DateTime _lastActivity = DateTime.Now;
     private DispatcherTimer? _hideTimer;
     private Point _dragOffset;
@@ -132,6 +133,32 @@ public partial class MainWindow : Window
             SetChatVisible(false);
         };
         _hideTimer.Start();
+        var hideFilterTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+        hideFilterTimer.Tick += (_, _) =>
+        {
+            try
+            {
+                var process = _system.ForegroundProcess() ?? string.Empty;
+                var title = _system.ForegroundWindowTitle();
+                var shouldHide = (_settings.HideInGames && GameProcesses.Any(process.Contains))
+                    || (_settings.HideInYoutube && title.Contains("YouTube", StringComparison.OrdinalIgnoreCase));
+                if (shouldHide && !_hiddenByFilter)
+                {
+                    _hiddenByFilter = true;
+                    Hide();
+                }
+                else if (!shouldHide && _hiddenByFilter)
+                {
+                    _hiddenByFilter = false;
+                    Show();
+                }
+            }
+            catch
+            {
+                // окно может быть уже закрыто
+            }
+        };
+        hideFilterTimer.Start();
         var taskbarTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         taskbarTimer.Tick += (_, _) =>
         {
@@ -252,7 +279,20 @@ public partial class MainWindow : Window
             drag.Click += (_, _) => _touchMode = "drag";
             var pet = new MenuItem { Header = (_touchMode == "pet" ? "✓ " : "") + "Поглаживания" };
             pet.Click += (_, _) => _touchMode = "pet";
-            var topmost = new MenuItem { Header = (_settings.AlwaysOnTop ? "✓ " : "") + "Поверх всех окон" };
+            var hideGames = new MenuItem { Header = (_settings.HideInGames ? "✓ " : "") + "Скрываться в играх" };
+            hideGames.Click += (_, _) =>
+            {
+                _settings.HideInGames = !_settings.HideInGames;
+                hideGames.Header = (_settings.HideInGames ? "✓ " : "") + "Скрываться в играх";
+                _settings.Save();
+            };
+            var hideYoutube = new MenuItem { Header = (_settings.HideInYoutube ? "✓ " : "") + "Скрываться в YouTube" };
+            hideYoutube.Click += (_, _) =>
+            {
+                _settings.HideInYoutube = !_settings.HideInYoutube;
+                hideYoutube.Header = (_settings.HideInYoutube ? "✓ " : "") + "Скрываться в YouTube";
+                _settings.Save();
+            };            var topmost = new MenuItem { Header = (_settings.AlwaysOnTop ? "✓ " : "") + "Поверх всех окон" };
             topmost.Click += (_, _) =>
             {
                 _settings.AlwaysOnTop = !_settings.AlwaysOnTop;
@@ -268,6 +308,8 @@ public partial class MainWindow : Window
             menu.Items.Add(drag);
             menu.Items.Add(pet);
             menu.Items.Add(lockDrag);
+            menu.Items.Add(hideGames);
+            menu.Items.Add(hideYoutube);
             menu.Items.Add(topmost);
             menu.Items.Add(new Separator());
             menu.Items.Add(exit);
