@@ -6,7 +6,8 @@ namespace Alya.System;
 /// <summary>Установленные игры Steam: чтение libraryfolders.vdf и appmanifest_*.acf.</summary>
 public sealed class SteamLibrary
 {
-    private static readonly Regex AppManifestRegex = new("\"appid\"\\s+\"(\\d+)\"\\s+\"name\"\\s+\"([^\"]+)\"", RegexOptions.Compiled);
+    private static readonly Regex AppIdRegex = new("\"appid\"\\s+\"(\\d+)\"", RegexOptions.Compiled);
+    private static readonly Regex NameRegex = new("\"name\"\\s+\"([^\"]+)\"", RegexOptions.Compiled);
     private static readonly Regex PathRegex = new("\"path\"\\s+\"([^\"]+)\"", RegexOptions.Compiled);
 
     private readonly List<(int AppId, string Name)> _games = new();
@@ -145,7 +146,12 @@ public sealed class SteamLibrary
                 {
                     try
                     {
-                        var match = AppManifestRegex.Match(File.ReadAllText(manifest));
+                        var content = File.ReadAllText(manifest);
+                        var idMatch = AppIdRegex.Match(content);
+                        var nameMatch2 = NameRegex.Match(content);
+                        if (!idMatch.Success || !nameMatch2.Success) continue;
+                        var match = idMatch;
+                        var nameValue = nameMatch2.Groups[1].Value;
                         if (!match.Success) continue;
                         var appId = int.Parse(match.Groups[1].Value);
                         var name = match.Groups[2].Value;
