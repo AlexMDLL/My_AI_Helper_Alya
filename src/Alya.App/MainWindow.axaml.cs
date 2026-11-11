@@ -606,11 +606,28 @@ public partial class MainWindow : Window
     }
     private string? TryOpenApp(string text)
     {
-        var match = Regex.Match(text.Trim(), @"^(открой|открыть|запусти|включи)\s+(.+)$", RegexOptions.IgnoreCase);
+        var match = Regex.Match(text.Trim(), @"(открой|открыть|запусти|включи|вруби)\s+(.+)$", RegexOptions.IgnoreCase);
         if (!match.Success) return null;
-        var target = match.Groups[2].Value.Trim();
+        var target = match.Groups[2].Value.Trim().Trim('.', '!', '?', ',');
         if (target.Length == 0) return null;
-        var ok = _system.Launch(target);
+        var aliases = new (string Key, string Value)[]
+        {
+            ("стим", "steam"), ("steam", "steam"), ("стиме", "steam"), ("стиму", "steam"),
+            ("хром", "chrome"), ("chrome", "chrome"), ("браузер", "chrome"),
+            ("телега", "telegram"), ("телеграм", "telegram"), ("телеге", "telegram"),
+            ("дискорд", "discord"), ("discord", "discord"),
+            ("блокнот", "notepad"), ("калькулятор", "calc"),
+            ("ворд", "winword"), ("эксель", "excel"), ("проводник", "explorer"),
+            ("код", "code"), ("вс код", "code")
+        };
+        var lower = target.ToLowerInvariant();
+        var resolved = target;
+        foreach (var (key, value) in aliases)
+        {
+            if (lower.Contains(key)) { resolved = value; break; }
+        }
+        try { File.AppendAllText(Path.Combine(Path.GetTempPath(), "alya-voice.log"), $"{DateTime.Now:HH:mm:ss} open target='{target}' resolved='{resolved}'\n"); } catch { }
+        var ok = _system.Launch(resolved);
         return ok ? $"Открываю {target}." : $"Не нашла {target}.";
     }
     private string? TryLaunchGame(string text)
