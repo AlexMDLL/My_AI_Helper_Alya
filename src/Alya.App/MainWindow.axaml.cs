@@ -297,6 +297,7 @@ public partial class MainWindow : Window
         Opened += (_, _) =>
         {
             ApplyWindowMode();
+            UpdateWindowSize();
             StatusText.Text = $"голос: {(_silero.Available ? "Silero" : _piper.Available ? "Piper" : "Windows")}";
             LoadCharacter();
             _voiceInput.TextRecognized += OnVoiceText;
