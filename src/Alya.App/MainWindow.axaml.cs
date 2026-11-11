@@ -42,6 +42,21 @@ public partial class MainWindow : Window
     private string _touchMode = "drag";
     private bool _lockDrag;
     private DateTime _lastPetAt = DateTime.MinValue;
+    private DispatcherTimer? _focusTimer;
+    private string _lastFocusCategory = string.Empty;
+    private DateTime _lastFocusReactionAt = DateTime.MinValue;
+    private static readonly string[] GameProcesses =
+    {
+        "cs2", "dota2", "deadbydaylight", "fortniteclient", "gta5", "rdr2", "eldenring",
+        "minecraft", "valorant", "leagueclient", "genshinimpact", "warthunder", "rustclient",
+        "dayz", "pubg", "apex", "starfield", "cyberpunk2077", "witcher3", "skyrim",
+        "fallout4", "pathofexile", "wow", "overwatch", "battlefield"
+    };
+    private static readonly string[] WorkProcesses =
+    {
+        "devenv", "code", "photoshop", "illustrator", "figma", "winword", "excel", "powerpnt",
+        "notion", "obsidian", "idea64", "pycharm64", "webstorm64", "blender", "unity", "rider64"
+    };
     private readonly ObservableCollection<Bubble> _messages = new();
     private DispatcherTimer? _clickTimer;
     private bool _clickThrough;
@@ -141,6 +156,9 @@ public partial class MainWindow : Window
             _clickTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(60) };
             _clickTimer.Tick += (_, _) => UpdateClickThrough();
             _clickTimer.Start();
+            _focusTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(45) };
+            _focusTimer.Tick += (_, _) => CheckFocus();
+            _focusTimer.Start();
             var ask = Environment.GetEnvironmentVariable("ALYA_ASK");
             if (!string.IsNullOrWhiteSpace(ask))
             {
@@ -347,6 +365,47 @@ public partial class MainWindow : Window
         });
     }
 
+    private void CheckFocus()
+    {
+        if (_talking) return;
+        var process = _system.ForegroundProcess();
+        if (string.IsNullOrEmpty(process) || process.Contains("alya") || process.Contains("electron")) return;
+        var category = GameProcesses.Any(process.Contains) ? "game"
+            : WorkProcesses.Any(process.Contains) ? "work"
+            : string.Empty;
+        if (category.Length == 0)
+        {
+            _lastFocusCategory = string.Empty;
+            return;
+        }
+        if (category == _lastFocusCategory) return;
+        if ((DateTime.Now - _lastFocusReactionAt).TotalMinutes < 6) return;
+        _lastFocusCategory = category;
+        _lastFocusReactionAt = DateTime.Now;
+
+        var phrases = category == "game"
+            ? new[] { "А со мной ты не играешь?", "Опять играешь? Ну ладно, я подожду.", "Играешь без меня? Обидно, знаешь ли." }
+            : new[] { "Работаешь? Ну ладно, не буду мешать! Долго не работай.", "Трудишься? Не забудь отдохнуть.", "Я рядом, если что. Но не сиди так долго." };
+        var phrase = phrases[Random.Shared.Next(phrases.Length)];
+        _talking = true;
+        Add("alya", phrase);
+        PlayScene("VideoTalk");
+        _ = SpeakAndReturn(phrase);
+    }
+
+    private async Task SpeakAndReturn(string phrase)
+    {
+        try
+        {
+            await _tts.SpeakAsync(phrase, "neutral");
+            await Task.Delay(Math.Clamp(phrase.Length * 65, 1200, 8000));
+        }
+        finally
+        {
+            _talking = false;
+            PlayScene("VideoStand");
+        }
+    }
     private void UpdateClickThrough()
     {
         if (_hwnd == IntPtr.Zero || _dragging) return;
