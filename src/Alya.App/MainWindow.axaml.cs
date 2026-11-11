@@ -496,6 +496,7 @@ public partial class MainWindow : Window
         if (!_scenes.ContainsKey("VideoStand")) return;
 
         PlayScene("VideoStand");
+        _animTimer?.Stop();
         _animTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16.6) };
         _animTimer.Tick += (_, _) => Tick();
         _animTimer.Start();
