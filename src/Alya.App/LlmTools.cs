@@ -98,7 +98,12 @@ public sealed class LlmTools
                     return "Готово.";
                 }
                 case "switch_window":
-                    return _system.Activate(Arg("query")) ? "Переключилась." : "Не нашла такое окно.";
+                {
+                    var query = Arg("query");
+                    var cut = query.Split(new[] { " а потом", "," }, StringSplitOptions.RemoveEmptyEntries)[0].Trim();
+                    cut = cut.Replace("переключись на", string.Empty).Replace("переключи", string.Empty).Trim();
+                    return _system.Activate(cut) ? "Переключилась." : "Не нашла такое окно.";
+                }
                 case "list_windows":
                 {
                     var windows = _system.VisibleWindows();

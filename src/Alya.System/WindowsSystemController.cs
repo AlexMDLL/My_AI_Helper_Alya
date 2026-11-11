@@ -68,6 +68,17 @@ public sealed class WindowsSystemController : Alya.Core.ISystemController
 
     public bool Activate(string query)
     {
+        if (TryActivateCore(query)) return true;
+        foreach (var token in query.Split(new[] { ' ', ',', '.', ';', ':' }, StringSplitOptions.RemoveEmptyEntries))
+        {
+            if (token.Length < 3) continue;
+            if (TryActivateCore(token)) return true;
+        }
+        return false;
+    }
+
+    private bool TryActivateCore(string query)
+    {
         var found = IntPtr.Zero;
         try
         {
