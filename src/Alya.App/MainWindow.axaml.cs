@@ -1052,7 +1052,8 @@ public partial class MainWindow : Window
         var match = Regex.Match(text, @"переключи(?:сь)?\s+(?:на|в)\s+(.+)$", RegexOptions.IgnoreCase);
         if (!match.Success) return null;
         var target = match.Groups[1].Value.Trim().Trim('.', '!', '?', ',');
-        return _system.Activate(target) ? $"Переключилась на {target}." : $"Не нашла окно {target}.";
+        if (_system.Activate(target)) return $"Переключилась на {target}.";
+        return _system.Launch(target) ? $"Окно {target} не было открыто — запустила." : $"Не нашла окно {target}.";
     }
     private string? TryCloseApp(string text)
     {

@@ -102,7 +102,9 @@ public sealed class LlmTools
                     var query = Arg("query");
                     var cut = query.Split(new[] { " а потом", "," }, StringSplitOptions.RemoveEmptyEntries)[0].Trim();
                     cut = cut.Replace("переключись на", string.Empty).Replace("переключи", string.Empty).Trim();
-                    return _system.Activate(cut) ? "Переключилась." : "Не нашла такое окно.";
+                    if (_system.Activate(cut)) return "Переключилась.";
+                    if (_system.Launch(cut)) return $"Окно {cut} не было открыто — запустила.";
+                    return $"Не нашла ни окно, ни программу {cut}.";
                 }
                 case "list_windows":
                 {
