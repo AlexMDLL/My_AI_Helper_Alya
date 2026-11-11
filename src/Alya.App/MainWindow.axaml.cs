@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -42,6 +43,25 @@ public partial class MainWindow : Window
     private bool _lockDrag;
     private DateTime _lastPetAt = DateTime.MinValue;
     private readonly ObservableCollection<Bubble> _messages = new();
+    private DispatcherTimer? _clickTimer;
+    private bool _clickThrough;
+    private IntPtr _hwnd;
+
+    [DllImport("user32.dll")]
+    private static extern bool GetCursorPos(out POINT point);
+
+    [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW")]
+    private static extern IntPtr GetWindowLongPtr(IntPtr hWnd, int index);
+
+    [DllImport("user32.dll", EntryPoint = "SetWindowLongPtrW")]
+    private static extern IntPtr SetWindowLongPtr(IntPtr hWnd, int index, IntPtr value);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct POINT
+    {
+        public int X;
+        public int Y;
+    }
     private TrayIcon? _tray;
 
     public MainWindow()
@@ -117,6 +137,10 @@ public partial class MainWindow : Window
             StatusText.Text = $"голос: {(_tts.Available ? "Silero" : "нет")}";
             LoadCharacter();
             CreateTray();
+            _hwnd = TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
+            _clickTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(60) };
+            _clickTimer.Tick += (_, _) => UpdateClickThrough();
+            _clickTimer.Start();
             var ask = Environment.GetEnvironmentVariable("ALYA_ASK");
             if (!string.IsNullOrWhiteSpace(ask))
             {
@@ -323,6 +347,43 @@ public partial class MainWindow : Window
         });
     }
 
+    private void UpdateClickThrough()
+    {
+        if (_hwnd == IntPtr.Zero || _dragging) return;
+        if (!GetCursorPos(out var point)) return;
+        var scale = RenderScaling;
+        var x = point.X - Position.X;
+        var y = point.Y - Position.Y;
+        var panelWidth = 390 * scale;
+        var insidePanel = x >= 0 && x <= panelWidth && y >= 0 && y <= Height * scale;
+        var insideCharacter = false;
+        try
+        {
+            var offset = CharacterImage.TranslatePoint(new Point(0, 0), this) ?? new Point(0, 0);
+            var bounds = CharacterImage.Bounds;
+            var left = (offset.X) * scale;
+            var top = (offset.Y) * scale;
+            var right = left + bounds.Width * scale;
+            var bottom = top + bounds.Height * scale;
+            insideCharacter = x >= left && x <= right && y >= top && y <= bottom;
+        }
+        catch
+        {
+            // окно ещё не готово
+        }
+        SetClickThrough(!insidePanel && !insideCharacter);
+    }
+
+    private void SetClickThrough(bool enabled)
+    {
+        if (_hwnd == IntPtr.Zero || enabled == _clickThrough) return;
+        _clickThrough = enabled;
+        const int GwlExStyle = -20;
+        const int WsExTransparent = 0x20;
+        var style = GetWindowLongPtr(_hwnd, GwlExStyle).ToInt64();
+        var updated = enabled ? style | WsExTransparent : style & ~WsExTransparent;
+        SetWindowLongPtr(_hwnd, GwlExStyle, new IntPtr(updated));
+    }
     private void OpenSettings()
     {
         var window = new SettingsWindow();
