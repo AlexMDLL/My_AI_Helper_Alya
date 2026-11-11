@@ -147,7 +147,7 @@ public sealed class MemoryGraph : Control
         foreach (var node in _nodes)
         {
             var center = ToScreen(node.X, node.Y);
-            var radius = (node.Kind == "user" ? 22 : 15) * _zoom;
+            var radius = 20 * _zoom;
             var dx = point.X - center.X;
             var dy = point.Y - center.Y;
             if (dx * dx + dy * dy <= radius * radius) return node;
@@ -168,12 +168,30 @@ public sealed class MemoryGraph : Control
             return;
         }
 
-        var linkPen = new Pen(new SolidColorBrush(Color.Parse("#1E3A5F")), 1);
+        var linkPen = new Pen(new SolidColorBrush(Color.Parse("#2A5C96")), 1.1);
+        var edgeIndex = 0;
         foreach (var (aId, bId) in _edges)
         {
             var a = _nodes.First(n => n.Id == aId);
             var b = _nodes.First(n => n.Id == bId);
-            context.DrawLine(linkPen, ToScreen(a.X, a.Y), ToScreen(b.X, b.Y));
+            var start = ToScreen(a.X, a.Y);
+            var end = ToScreen(b.X, b.Y);
+            var mid = new Point((start.X + end.X) / 2, (start.Y + end.Y) / 2);
+            var dx = end.X - start.X;
+            var dy = end.Y - start.Y;
+            var length = Math.Max(1, Math.Sqrt(dx * dx + dy * dy));
+            var amplitude = (4.5 + 3.5 * Math.Sin(_time * 1.7 + edgeIndex * 0.8)) * Math.Min(1.4, _zoom);
+            var normalX = -dy / length * amplitude;
+            var normalY = dx / length * amplitude;
+            var geometry = new StreamGeometry();
+            using (var stream = geometry.Open())
+            {
+                stream.BeginFigure(start, false);
+                stream.QuadraticBezierTo(new Point(mid.X + normalX, mid.Y + normalY), end);
+                stream.EndFigure(false);
+            }
+            context.DrawGeometry(null, linkPen, geometry);
+            edgeIndex++;
         }
 
         foreach (var node in _nodes)
@@ -181,7 +199,8 @@ public sealed class MemoryGraph : Control
             var center = ToScreen(node.X, node.Y);
             var isHot = ReferenceEquals(node, _selected) || ReferenceEquals(node, _hover);
             var pulse = 1 + (isHot ? 0.10 : 0.035) * Math.Sin(_time * 2.2 + node.X * 0.05);
-            var radius = (node.Kind == "user" ? 20 : 13) * _zoom * (0.6 + 0.4 * _appear) * pulse;
+            var baseRadius = ReferenceEquals(node, _selected) ? 21 : ReferenceEquals(node, _hover) ? 17 : 13;
+            var radius = baseRadius * _zoom * (0.6 + 0.4 * _appear) * pulse;
             var color = node.Kind switch
             {
                 "user" => "#FFD166",
@@ -212,7 +231,7 @@ public sealed class MemoryGraph : Control
             _selected = node;
             SelectionChanged?.Invoke(node);
             _zoomTarget = node;
-            _targetZoom = Math.Max(1.8, _zoom);
+            _targetZoom = 2.1;
             _timer?.Start();
         }
         else
@@ -258,9 +277,10 @@ public sealed class MemoryGraph : Control
     {
         _time += 0.033;
         if (_appear < 1) _appear = Math.Min(1, _appear + 0.06);
+        if (_zoomTarget is not null) AnimateZoom();
         InvalidateVisual();
     }
-    private void Animate()
+    private void AnimateZoom()
     {
         if (_zoomTarget is null) return;
         var target = new Point(Bounds.Width / 2 - _zoomTarget.X * _targetZoom, Bounds.Height / 2 - _zoomTarget.Y * _targetZoom);
@@ -271,7 +291,6 @@ public sealed class MemoryGraph : Control
             _zoom = _targetZoom;
             _pan = target;
             _zoomTarget = null;
-            _timer?.Stop();
         }
         InvalidateVisual();
     }
