@@ -134,6 +134,18 @@ public partial class MainWindow : Window
             ChatPanel.IsVisible = false;
         };
         _hideTimer.Start();
+        var taskbarTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        taskbarTimer.Tick += (_, _) =>
+        {
+            if (_dragging || Screens.Primary is null) return;
+            var work = Screens.Primary.WorkingArea;
+            var floor = work.Y + work.Height - (int)Height + Math.Clamp(_settings.PersonaOffset, -100, 200);
+            if (Math.Abs(Position.Y - floor) > 120) return;
+            if (Position.Y == floor) return;
+            Position = new PixelPoint(Position.X, floor);
+        };
+        taskbarTimer.Start();
+
 
         ChatPanel.RenderTransform = _panelOffset;
         try
@@ -836,7 +848,7 @@ public partial class MainWindow : Window
     {
         if (!_settings.FallEnabled) return;
         if (Screens.Primary is null) return;
-        var area = Screens.Primary.Bounds;
+        var area = Screens.Primary.WorkingArea;
         _fallX = Math.Clamp(Position.X, area.X, area.X + area.Width - (int)Width);
         var floor = area.Y + area.Height - (int)Height - 4;
         _fallY = Position.Y;
