@@ -136,6 +136,9 @@
             <TextBlock Text="Проверка связи с моделью" Classes="label"/>
             <Button x:Name="CheckModelButton" Content="Проверить Ollama" Classes="ghost" HorizontalAlignment="Left"/>
             <TextBlock x:Name="BrainStatus" Text="—" Classes="hint" Margin="0,8,0,0"/>
+            <TextBlock Text="Модель (выбор из установленных)" Classes="label"/>
+            <ComboBox x:Name="ModelSelect" HorizontalAlignment="Stretch"/>
+            <Button x:Name="RefreshModelsButton" Content="Обновить список" Classes="ghost" HorizontalAlignment="Left" Margin="0,6,0,0"/>
           </StackPanel>
 
           <StackPanel x:Name="PanelMemory" Spacing="4" IsVisible="False">

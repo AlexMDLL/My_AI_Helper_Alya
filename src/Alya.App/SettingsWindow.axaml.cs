@@ -92,6 +92,8 @@ public partial class SettingsWindow : Window
         PitchSlider.PropertyChanged += (_, args) => { if (args.Property == Slider.ValueProperty) UpdateLabels(); };
         OpacitySlider.PropertyChanged += (_, args) => { if (args.Property == Slider.ValueProperty) UpdateLabels(); };
 
+        RefreshModelsButton.Click += async (_, _) => await LoadModelsAsync();
+        _ = LoadModelsAsync();
         CheckModelButton.Click += async (_, _) => await CheckOllamaAsync();
         ClearMemoryButton.Click += (_, _) => ClearMemory();
         PreviewVoiceButton.Click += (_, _) => PreviewVoice();
@@ -247,9 +249,31 @@ public partial class SettingsWindow : Window
         PitchLabel.Text = $"Тембр — {PitchSlider.Value:0.00}";
         OpacityLabel.Text = $"Прозрачность — {(int)Math.Round(OpacitySlider.Value * 100)}%";
     }
+    private async Task LoadModelsAsync()
+    {
+        try
+        {
+            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(8) };
+            var json = await http.GetStringAsync("http://127.0.0.1:11434/api/tags");
+            using var document = global::System.Text.Json.JsonDocument.Parse(json);
+            var models = document.RootElement.GetProperty("models").EnumerateArray()
+                .Select(item => item.GetProperty("name").GetString())
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .Select(name => name!)
+                .OrderBy(name => name)
+                .ToList();
+            ModelSelect.ItemsSource = models;
+            var current = models.FirstOrDefault(name => name.Equals(_settings.Model, StringComparison.OrdinalIgnoreCase));
+            ModelSelect.SelectedItem = current ?? models.FirstOrDefault();
+        }
+        catch (Exception error)
+        {
+            BrainStatus.Text = $"Не удалось получить модели: {error.Message}";
+        }
+    }
     private void Save()
     {
-        _settings.Model = ModelBox.Text?.Trim() is { Length: > 0 } model ? model : "qwen2.5:7b-instruct";
+        _settings.Model = ModelSelect.SelectedItem as string ?? (ModelBox.Text?.Trim() is { Length: > 0 } model ? model : "qwen2.5:7b-instruct");
         _settings.ChatAutoHideSeconds = (int)(AutoHideBox.Value ?? 20);
         _settings.Fps = (int)(FpsBox.Value ?? 120);
         _settings.Pitch = Math.Round(PitchSlider.Value, 2);
