@@ -836,7 +836,7 @@ public partial class MainWindow : Window
     {
         if (!_settings.FallEnabled) return;
         if (Screens.Primary is null) return;
-        var area = Screens.Primary.WorkingArea;
+        var area = Screens.Primary.Bounds;
         _fallX = Math.Clamp(Position.X, area.X, area.X + area.Width - (int)Width);
         var floor = area.Y + area.Height - (int)Height - 4;
         _fallY = Position.Y;

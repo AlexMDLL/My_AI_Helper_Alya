@@ -92,8 +92,19 @@ public sealed class VoiceInputService : IDisposable
                 _lastVoice = DateTime.Now;
             }
 
-            if (!_hadSpeech || _busy) return;
-            if ((DateTime.Now - _lastVoice).TotalMilliseconds < 550) return;
+            if (!_hadSpeech)
+            {
+                if (_buffer.Length > _sampleRate * 2 * 2)
+                {
+                    var keep = (int)(_sampleRate * 2 * 1.2);
+                    var data = _buffer.ToArray();
+                    _buffer.SetLength(0);
+                    _buffer.Write(data, data.Length - keep, keep);
+                }
+                return;
+            }
+            if (_busy) return;
+            if ((DateTime.Now - _lastVoice).TotalMilliseconds < 700) return;
             if (_buffer.Length < _sampleRate * 2 * 0.3) return;
 
             _hadSpeech = false;
