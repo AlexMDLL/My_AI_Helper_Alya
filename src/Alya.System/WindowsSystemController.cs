@@ -214,12 +214,27 @@ public sealed class WindowsSystemController : Alya.Core.ISystemController
     {
         try
         {
-            var processes = Process.GetProcessesByName(target);
-            foreach (var process in processes)
+            var query = target.Trim().ToLowerInvariant();
+            var matched = Process.GetProcesses()
+                .Where(process =>
+                {
+                    try
+                    {
+                        if (process.ProcessName.Contains(query, StringComparison.OrdinalIgnoreCase)) return true;
+                        return !string.IsNullOrEmpty(process.MainWindowTitle)
+                            && process.MainWindowTitle.Contains(target, StringComparison.OrdinalIgnoreCase);
+                    }
+                    catch
+                    {
+                        return false;
+                    }
+                })
+                .ToList();
+            foreach (var process in matched)
             {
-                process.Kill(entireProcessTree: true);
+                try { process.Kill(entireProcessTree: true); } catch { }
             }
-            return processes.Length > 0;
+            return matched.Count > 0;
         }
         catch
         {

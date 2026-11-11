@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Avalonia;
@@ -326,6 +327,22 @@ public partial class MainWindow : Window
                 _settings.HideInVisualStudio = !_settings.HideInVisualStudio;
                 hideVs.Header = (_settings.HideInVisualStudio ? "✓ " : "") + "Скрываться в Visual Studio";
                 _settings.Save();
+            };            var admin = new MenuItem { Header = "Перезапустить от администратора" };
+            admin.Click += (_, _) =>
+            {
+                try
+                {
+                    var exe = Environment.ProcessPath;
+                    if (exe is not null)
+                    {
+                        Process.Start(new ProcessStartInfo(exe) { Verb = "runas", UseShellExecute = true, WorkingDirectory = AppContext.BaseDirectory });
+                    }
+                    Close();
+                }
+                catch
+                {
+                    // UAC отменён
+                }
             };            var topmost = new MenuItem { Header = (_settings.AlwaysOnTop ? "✓ " : "") + "Поверх всех окон" };
             topmost.Click += (_, _) =>
             {
@@ -345,6 +362,8 @@ public partial class MainWindow : Window
             menu.Items.Add(hideGames);
             menu.Items.Add(hideYoutube);
             menu.Items.Add(hideVs);
+            menu.Items.Add(new Separator());
+            menu.Items.Add(admin);
             menu.Items.Add(topmost);
             menu.Items.Add(new Separator());
             menu.Items.Add(exit);
