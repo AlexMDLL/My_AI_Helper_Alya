@@ -516,6 +516,7 @@ public partial class MainWindow : Window
     {
         Dispatcher.UIThread.Post(() =>
         {
+            try { File.AppendAllText(Path.Combine(Path.GetTempPath(), "alya-voice.log"), $"{DateTime.Now:HH:mm:ss} ui got: {text}\n"); } catch { }
             var lower = text.ToLowerInvariant();
             var hasWake = lower.Contains("аля") || lower.Contains("алла") || lower.Contains("алю") || lower.Contains("але") || lower.Contains("ало");
             if (!_settings.AlwaysListen && !hasWake) return;

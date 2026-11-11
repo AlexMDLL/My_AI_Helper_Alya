@@ -37,19 +37,28 @@ public sealed class VoiceInputService : IDisposable
     }
 
     public bool Available => File.Exists(_modelPath);
+    private static readonly string LogPath = Path.Combine(Path.GetTempPath(), "alya-voice.log");
+
+    private static void Log(string message)
+    {
+        try { File.AppendAllText(LogPath, $"{DateTime.Now:HH:mm:ss} {message}\n"); } catch { }
+    }
 
     public void Start()
     {
         if (!Available) return;
         try
         {
+            Log($"start model={_modelPath} exists={File.Exists(_modelPath)}");
             _processor ??= WhisperFactory.FromPath(_modelPath).CreateBuilder().WithLanguage("ru").Build();
+            Log("whisper loaded");
             _wave.StartRecording();
+            Log("mic started");
             ListeningChanged?.Invoke(true);
         }
-        catch
+        catch (Exception error)
         {
-            // микрофон/модель недоступны
+            Log($"start failed: {error.Message}");
         }
     }
 
@@ -71,7 +80,7 @@ public sealed class VoiceInputService : IDisposable
         var chunk = new byte[args.BytesRecorded];
         Array.Copy(args.Buffer, chunk, args.BytesRecorded);
         var level = Rms(chunk);
-        var hasVoice = level > 0.015f;
+        var hasVoice = level > 0.008f;
 
         lock (_gate)
         {
@@ -83,8 +92,8 @@ public sealed class VoiceInputService : IDisposable
             }
 
             if (!_hadSpeech || _busy) return;
-            if ((DateTime.Now - _lastVoice).TotalMilliseconds < 700) return;
-            if (_buffer.Length < _sampleRate * 2 * 0.4) return;
+            if ((DateTime.Now - _lastVoice).TotalMilliseconds < 600) return;
+            if (_buffer.Length < _sampleRate * 2 * 0.3) return;
 
             _hadSpeech = false;
             _busy = true;
@@ -111,6 +120,7 @@ public sealed class VoiceInputService : IDisposable
                 builder.Append(segment.Text).Append(' ');
             }
             var text = builder.ToString().Trim();
+            Log($"heard: {text}");
             if (text.Length >= 2) TextRecognized?.Invoke(text);
         }
         catch

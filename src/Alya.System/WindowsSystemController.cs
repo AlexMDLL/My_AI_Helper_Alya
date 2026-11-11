@@ -39,11 +39,34 @@ public sealed class WindowsSystemController : Alya.Core.ISystemController
             .OrderBy(name => name)
             .ToList();
 
+    private static readonly Dictionary<string, string> Aliases = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["хром"] = "chrome",
+        ["браузер"] = "chrome",
+        ["гугл"] = "chrome",
+        ["телега"] = "telegram",
+        ["телеграм"] = "telegram",
+        ["тг"] = "telegram",
+        ["блокнот"] = "notepad",
+        ["калькулятор"] = "calc",
+        ["стим"] = "steam",
+        ["дискорд"] = "discord",
+        ["ворд"] = "winword",
+        ["эксель"] = "excel",
+        ["паинт"] = "mspaint",
+        ["фотошоп"] = "photoshop",
+        ["код"] = "code",
+        ["вс код"] = "code",
+        ["проводник"] = "explorer",
+        ["спотифай"] = "spotify"
+    };
+
     public bool Launch(string target)
     {
         try
         {
             var name = target.Trim();
+            if (Aliases.TryGetValue(name, out var alias)) name = alias;
             if (name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) && File.Exists(name))
             {
                 Start(name);
@@ -57,13 +80,47 @@ public sealed class WindowsSystemController : Alya.Core.ISystemController
                 return true;
             }
 
-            Start(name);
-            return true;
+            try
+            {
+                Start(name);
+                return true;
+            }
+            catch
+            {
+                var shortcut = FindShortcut(name);
+                if (shortcut is null) return false;
+                Start(shortcut);
+                return true;
+            }
         }
         catch
         {
             return false;
         }
+    }
+
+    private static string? FindShortcut(string name)
+    {
+        try
+        {
+            var folders = new[]
+            {
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu), "Programs"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.StartMenu), "Programs")
+            };
+            foreach (var folder in folders.Where(Directory.Exists))
+            {
+                var match = Directory.EnumerateFiles(folder, "*.lnk", SearchOption.AllDirectories)
+                    .FirstOrDefault(file => Path.GetFileNameWithoutExtension(file)
+                        .Contains(name, StringComparison.OrdinalIgnoreCase));
+                if (match is not null) return match;
+            }
+        }
+        catch
+        {
+            // поиск не удался
+        }
+        return null;
     }
 
     public bool Close(string target)
