@@ -5,7 +5,8 @@
         Width="470" Height="580"
         CanResize="False"
         SystemDecorations="None"
-        Background="#FF0D1522"
+        TransparencyLevelHint="Transparent"
+        Background="Transparent"
         WindowStartupLocation="CenterOwner">
   <Window.Styles>
     <Style Selector="Button.nav">
@@ -87,8 +88,7 @@
     </Style>
   </Window.Styles>
 
-  <Border CornerRadius="18" Background="#FF0D1522" BorderBrush="#33A7D8FF" BorderThickness="1"
-          Margin="0">
+  <Border CornerRadius="18" Background="#FF0D1522" BorderBrush="#33A7D8FF" BorderThickness="1" Margin="0">
     <Grid RowDefinitions="Auto,Auto,*,Auto">
 
       <Border Grid.Row="0" x:Name="TitleBar" Padding="16,12" CornerRadius="18,18,0,0" Background="#331E3348">
