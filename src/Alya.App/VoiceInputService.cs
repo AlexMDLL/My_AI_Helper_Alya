@@ -19,6 +19,7 @@ public sealed class VoiceInputService : IDisposable
     private DateTime _lastLevelLog = DateTime.MinValue;
     private DateTime _lastUsed = DateTime.MinValue;
     private DispatcherTimer? _idleTimer;
+    private readonly object _processorGate = new();
     private int _sampleRate = 16000;
 
     public event Action<string>? TextRecognized;
@@ -79,6 +80,23 @@ public sealed class VoiceInputService : IDisposable
         }
     }
 
+    private void EnsureProcessor()
+    {
+        if (_processor is not null) return;
+        lock (_processorGate)
+        {
+            if (_processor is not null) return;
+            try
+            {
+                _processor = WhisperFactory.FromPath(_modelPath).CreateBuilder().WithLanguage("ru").Build();
+                Log("whisper reloaded");
+            }
+            catch (Exception error)
+            {
+                Log($"whisper reload failed: {error.Message}");
+            }
+        }
+    }
     public void Stop()
     {
         try
@@ -141,6 +159,7 @@ public sealed class VoiceInputService : IDisposable
                 samples[i] = BitConverter.ToInt16(audio, i * 2) / 32768f;
             }
 
+            EnsureProcessor();
             if (_processor is null) return;
             var builder = new StringBuilder();
             await foreach (var segment in _processor.ProcessAsync(samples))
