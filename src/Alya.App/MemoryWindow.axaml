@@ -1,37 +1,34 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:Alya.App"
         x:Class="Alya.App.MemoryWindow"
         Title="Память Али"
-        Width="460" Height="560"
-        CanResize="False"
-        SystemDecorations="None"
-        TransparencyLevelHint="Transparent"
-        Background="Transparent"
+        Width="880" Height="580"
+        MinWidth="620" MinHeight="420"
+        Background="#070B14"
         WindowStartupLocation="CenterOwner">
-  <Border CornerRadius="18" Background="#F20D1522" BorderBrush="#33A7D8FF" BorderThickness="1" Margin="0">
-    <Grid RowDefinitions="Auto,*,Auto">
-      <Border Padding="16,12" Background="#331E3348" CornerRadius="18,18,0,0">
-        <Grid ColumnDefinitions="*,Auto">
-          <StackPanel>
-            <TextBlock Text="ПАМЯТЬ АЛИ" FontSize="13" FontWeight="SemiBold" Foreground="#EAF4FF" LetterSpacing="2"/>
-            <TextBlock Text="что она запомнила и какие связи выстроила" FontSize="10" Foreground="#7F93AA"/>
-          </StackPanel>
-          <Button Grid.Column="1" x:Name="CloseButton" Content="✕" Background="Transparent" Foreground="#8EA4BD" BorderThickness="0"/>
-        </Grid>
-      </Border>
-      <ScrollViewer Grid.Row="1" Margin="16,12">
+  <Grid ColumnDefinitions="*,300" RowDefinitions="*,Auto">
+    <local:MemoryGraph x:Name="Graph" Grid.RowSpan="2"/>
+    <Border Grid.Column="1" Grid.RowSpan="2" Background="#0C1524" BorderBrush="#1E3A5F" BorderThickness="1,0,0,0">
+      <ScrollViewer Margin="14">
         <StackPanel Spacing="10">
-          <TextBlock Text="Факты" Foreground="#5EEAD4" FontSize="12" FontWeight="SemiBold"/>
-          <StackPanel x:Name="FactsPanel" Spacing="4"/>
-          <TextBlock Text="Правила" Foreground="#5EEAD4" FontSize="12" FontWeight="SemiBold" Margin="0,8,0,0"/>
-          <StackPanel x:Name="RulesPanel" Spacing="4"/>
-          <TextBlock Text="Связи" Foreground="#5EEAD4" FontSize="12" FontWeight="SemiBold" Margin="0,8,0,0"/>
-          <TextBlock x:Name="LinksText" Text="—" TextWrapping="Wrap" Foreground="#9FB2C9" FontSize="12"/>
+          <TextBlock Text="УЗЕЛ ПАМЯТИ" FontSize="11" LetterSpacing="2" Foreground="#5F7FA8"/>
+          <TextBlock x:Name="NodeTitle" Text="Нажми на кружок" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap" Foreground="#EAF4FF"/>
+          <TextBlock x:Name="NodeKind" Text="" FontSize="11" Foreground="#7CE7FF"/>
+          <TextBlock Text="Связано с" FontSize="11" Foreground="#5F7FA8" Margin="0,6,0,0"/>
+          <ItemsControl x:Name="ConnectionsList">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <TextBlock Text="{Binding}" Foreground="#9FC4E8" FontSize="12" Margin="0,2"/>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <Button x:Name="DeleteButton" Content="Забыть это" HorizontalAlignment="Left" Margin="0,10,0,0"
+                  Background="#33223044" Foreground="#FF9AA8" BorderThickness="0" CornerRadius="8" Padding="10,5"/>
+          <Button x:Name="CloseButton" Content="Закрыть" HorizontalAlignment="Left" Margin="0,6,0,0"
+                  Background="#1C2B3F" Foreground="#CFE2F5" BorderThickness="0" CornerRadius="8" Padding="10,5"/>
         </StackPanel>
       </ScrollViewer>
-      <Border Grid.Row="2" Padding="14,10" Background="#111C2B" CornerRadius="0,0,18,18">
-        <Button x:Name="RefreshButton" Content="Обновить" Classes="primary" HorizontalAlignment="Left"/>
-      </Border>
-    </Grid>
-  </Border>
+    </Border>
+  </Grid>
 </Window>

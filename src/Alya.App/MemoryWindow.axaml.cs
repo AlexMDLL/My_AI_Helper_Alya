@@ -1,84 +1,79 @@
 using Avalonia.Controls;
-using Avalonia.Layout;
-using Avalonia.Media;
 
 namespace Alya.App;
 
 public partial class MemoryWindow : Window
 {
+    private GraphNode? _selected;
+
     public MemoryWindow()
     {
         InitializeComponent();
         CloseButton.Click += (_, _) => Close();
-        RefreshButton.Click += (_, _) => Load();
+        DeleteButton.IsVisible = false;
+        DeleteButton.Click += (_, _) => DeleteSelected();
+        Graph.SelectionChanged += OnSelected;
         Load();
     }
 
     private void Load()
     {
         var memory = MemoryStore.Load();
-        Build(FactsPanel, memory.Facts, isFact: true);
-        Build(RulesPanel, memory.Rules, isFact: false);
-        LinksText.Text = BuildLinks(memory);
+        var settings = AlyaSettings.Load();
+        var items = new List<(string Label, string Kind, string Content)>
+        {
+            (settings.UserName, "user", settings.UserName),
+            (settings.City, "city", settings.City)
+        };
+        foreach (var fact in memory.Facts)
+        {
+            items.Add((fact, "fact", fact));
+        }
+        foreach (var rule in memory.Rules)
+        {
+            items.Add((rule, "rule", rule));
+        }
+        Graph.SetData(items);
+        NodeTitle.Text = "Нажми на кружок";
+        NodeKind.Text = string.Empty;
+        ConnectionsList.ItemsSource = null;
+        DeleteButton.IsVisible = false;
     }
 
-    private void Build(StackPanel panel, List<string> items, bool isFact)
+    private void OnSelected(GraphNode? node)
     {
-        panel.Children.Clear();
-        if (items.Count == 0)
+        _selected = node;
+        if (node is null)
         {
-            panel.Children.Add(new TextBlock
-            {
-                Text = isFact ? "Пока ничего не запоминала." : "Правил нет.",
-                Foreground = new SolidColorBrush(Color.Parse("#9FB2C9")),
-                FontSize = 12
-            });
+            NodeTitle.Text = "Нажми на кружок";
+            NodeKind.Text = string.Empty;
+            ConnectionsList.ItemsSource = null;
+            DeleteButton.IsVisible = false;
             return;
         }
-        foreach (var item in items)
+
+        NodeTitle.Text = node.Content;
+        NodeKind.Text = node.Kind switch
         {
-            var row = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
-            row.Children.Add(new TextBlock
-            {
-                Text = "• " + item,
-                TextWrapping = TextWrapping.Wrap,
-                Foreground = new SolidColorBrush(Color.Parse("#E6EDF5")),
-                FontSize = 12.5,
-                VerticalAlignment = VerticalAlignment.Center
-            });
-            var remove = new Button
-            {
-                Content = "✕",
-                Width = 28,
-                Height = 24,
-                Padding = new Avalonia.Thickness(0),
-                Background = Brushes.Transparent,
-                Foreground = new SolidColorBrush(Color.Parse("#FF7B8C"))
-            };
-            Grid.SetColumn(remove, 1);
-            var value = item;
-            remove.Click += (_, _) =>
-            {
-                var current = MemoryStore.Load();
-                if (isFact) current.Facts.RemoveAll(f => f == value);
-                else current.Rules.RemoveAll(r => r == value);
-                current.Save();
-                Load();
-            };
-            row.Children.Add(remove);
-            panel.Children.Add(row);
-        }
+            "user" => "пользователь",
+            "city" => "город",
+            "rule" => "правило",
+            _ => "факт"
+        };
+        var neighbors = Graph.NeighborLabels(node);
+        ConnectionsList.ItemsSource = neighbors.Count == 0
+            ? new List<string> { "пока ни с чем не связано" }
+            : neighbors;
+        DeleteButton.IsVisible = node.Kind is "fact" or "rule";
     }
 
-    private static string BuildLinks(MemoryStore memory)
+    private void DeleteSelected()
     {
-        var text = string.Join(" ", memory.Facts).ToLowerInvariant();
-        var parts = new List<string>();
-        if (text.Contains("зовут") || text.Contains("александр")) parts.Add("• Пользователь — Александр");
-        if (text.Contains("сыктывкар")) parts.Add("• Живёт/бывает в Сыктывкаре");
-        if (text.Contains("люб") || text.Contains("гитар")) parts.Add("• Есть увлечения: гитара/музыка");
-        if (parts.Count == 0) return "Связей пока нет — накапливаю.";
-        parts.Add("• Город по умолчанию: Сыктывкар (для погоды)");
-        return string.Join("\n", parts.Distinct());
+        if (_selected is null || _selected.Kind is not ("fact" or "rule")) return;
+        var memory = MemoryStore.Load();
+        if (_selected.Kind == "fact") memory.Facts.RemoveAll(fact => fact == _selected.Content);
+        else memory.Rules.RemoveAll(rule => rule == _selected.Content);
+        memory.Save();
+        Load();
     }
 }
