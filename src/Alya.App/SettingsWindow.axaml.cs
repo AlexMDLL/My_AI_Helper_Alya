@@ -32,6 +32,26 @@ public partial class SettingsWindow : Window
         Opacity = 1;
         RefreshAccent();
         UpdateRgbFromAccent();
+        HexBox.Text = _accent;
+        HexBox.TextChanged += (_, _) =>
+        {
+            var text = HexBox.Text?.Trim() ?? string.Empty;
+            if (text.Length != 7 || !text.StartsWith("#")) return;
+            try
+            {
+                var color = Color.Parse(text);
+                _accent = text.ToUpperInvariant();
+                RedSlider.Value = color.R;
+                GreenSlider.Value = color.G;
+                BlueSlider.Value = color.B;
+                AccentPreview.Background = new SolidColorBrush(color);
+                SaveButton.Background = new SolidColorBrush(color);
+            }
+            catch
+            {
+                // недописанный цвет
+            }
+        };
         RefreshMemory();
 
         NavGeneral.Click += (_, _) => SelectTab(0);

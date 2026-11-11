@@ -59,7 +59,20 @@
       <Setter Property="TextWrapping" Value="Wrap"/>
     </Style>
     <Style Selector="TextBox, ComboBox, NumericUpDown">
-      <Setter Property="CornerRadius" Value="10"/>
+      <Setter Property="Background" Value="#141F2E"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="CornerRadius" Value="12"/>
+      <Setter Property="Padding" Value="10,8"/>
+      <Setter Property="MinHeight" Value="36"/>
+    </Style>
+    <Style Selector="Slider /template/ Border">
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Background" Value="Transparent"/>
+    </Style>
+    <Style Selector="Slider">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Padding" Value="0"/>
     </Style>
     <Style Selector="Button.swatch">
       <Setter Property="Width" Value="34"/>
@@ -163,7 +176,21 @@
               <Button x:Name="SwatchPurple" Classes="swatch" Background="#A78BFA" Tag="#A78BFA"/>
               <Button x:Name="SwatchOrange" Classes="swatch" Background="#FB923C" Tag="#FB923C"/>
             </StackPanel>
-            <TextBlock Text="Свой цвет (RGB)" Classes="label"/>
+            <TextBlock Text="Свой цвет (RGB)" Classes="label"/>            <TextBlock Text="HEX" Classes="label"/>
+            <TextBox x:Name="HexBox" Text="#38BDF8" MaxLength="7" Width="120" HorizontalAlignment="Left"/>
+            <Border Height="10" CornerRadius="5" Margin="0,8,0,0">
+              <Border.Background>
+                <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                  <GradientStop Offset="0" Color="#FF0000"/>
+                  <GradientStop Offset="0.17" Color="#FFFF00"/>
+                  <GradientStop Offset="0.33" Color="#00FF00"/>
+                  <GradientStop Offset="0.5" Color="#00FFFF"/>
+                  <GradientStop Offset="0.66" Color="#0000FF"/>
+                  <GradientStop Offset="0.83" Color="#FF00FF"/>
+                  <GradientStop Offset="1" Color="#FF0000"/>
+                </LinearGradientBrush>
+              </Border.Background>
+            </Border>
             <Border x:Name="AccentPreview" Width="38" Height="38" CornerRadius="19" Background="#38BDF8" HorizontalAlignment="Left" Margin="0,4,0,6"/>
             <Grid ColumnDefinitions="20,*,44" RowDefinitions="Auto,Auto,Auto">
               <TextBlock Grid.Row="0" Grid.Column="0" Text="R" Classes="label" VerticalAlignment="Center"/>
