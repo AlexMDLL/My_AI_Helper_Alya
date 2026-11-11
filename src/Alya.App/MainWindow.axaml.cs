@@ -789,7 +789,7 @@ public partial class MainWindow : Window
     private void SetChatVisible(bool visible)
     {
         ChatPanel.IsVisible = visible;
-        if (visible) AnimateChat();
+        if (visible) Dispatcher.UIThread.Post(AnimateChat, DispatcherPriority.Background);
         _lastActivity = DateTime.Now;
         if (!_settings.Fullscreen) UpdateWindowSize();
     }

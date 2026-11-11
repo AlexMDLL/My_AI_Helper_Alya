@@ -95,8 +95,8 @@
     </Border>
 
     <Grid Grid.Column="1">
-      <Image x:Name="CharacterImage" Stretch="UniformToFill" Height="{Binding $parent[Window].Height}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="0,0,0,0" RenderTransformOrigin="0.5,1" RenderOptions.BitmapInterpolationMode="HighQuality"/>
-      <Image x:Name="CharacterFade" Stretch="Uniform" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,0,0" RenderTransformOrigin="0.5,1" Opacity="0" IsVisible="False" IsHitTestVisible="False" RenderOptions.BitmapInterpolationMode="HighQuality"/>
+      <Image x:Name="CharacterImage" Stretch="UniformToFill" Width="324" Height="{Binding $parent[Window].Height}" HorizontalAlignment="Right" VerticalAlignment="Stretch" Margin="0,0,0,0" RenderTransformOrigin="0.5,1" RenderOptions.BitmapInterpolationMode="HighQuality"/>
+      <Image x:Name="CharacterFade" Stretch="Uniform" Width="324" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,0,0" RenderTransformOrigin="0.5,1" Opacity="0" IsVisible="False" IsHitTestVisible="False" RenderOptions.BitmapInterpolationMode="HighQuality"/>
       <Border x:Name="SpeechBubble" IsVisible="False" MaxWidth="300" HorizontalAlignment="Center" VerticalAlignment="Top"
               Margin="10,18,10,0" Padding="12,9" CornerRadius="14" Background="#FF16243A"
               BorderBrush="#335EEAD4" BorderThickness="1" BoxShadow="0 8 24 0 #66000000">
