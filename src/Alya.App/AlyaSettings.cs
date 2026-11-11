@@ -23,6 +23,7 @@ public sealed class AlyaSettings
     public bool AlwaysOnTop { get; set; } = true;
     public bool HideInGames { get; set; } = false;
     public bool HideInYoutube { get; set; } = false;
+    public bool HideInVisualStudio { get; set; } = false;
     public double Temperature { get; set; } = 0.8;
     public double Opacity { get; set; } = 1.0;
     public string Accent { get; set; } = "#38BDF8";

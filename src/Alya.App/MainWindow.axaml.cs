@@ -141,7 +141,8 @@ public partial class MainWindow : Window
                 var process = _system.ForegroundProcess() ?? string.Empty;
                 var title = _system.ForegroundWindowTitle();
                 var shouldHide = (_settings.HideInGames && GameProcesses.Any(process.Contains))
-                    || (_settings.HideInYoutube && title.Contains("YouTube", StringComparison.OrdinalIgnoreCase));
+                    || (_settings.HideInYoutube && title.Contains("YouTube", StringComparison.OrdinalIgnoreCase))
+                    || (_settings.HideInVisualStudio && (process.Contains("devenv") || title.Contains("Visual Studio", StringComparison.OrdinalIgnoreCase)));
                 if (shouldHide && !_hiddenByFilter)
                 {
                     _hiddenByFilter = true;
@@ -292,6 +293,12 @@ public partial class MainWindow : Window
                 _settings.HideInYoutube = !_settings.HideInYoutube;
                 hideYoutube.Header = (_settings.HideInYoutube ? "✓ " : "") + "Скрываться в YouTube";
                 _settings.Save();
+            };            var hideVs = new MenuItem { Header = (_settings.HideInVisualStudio ? "✓ " : "") + "Скрываться в Visual Studio" };
+            hideVs.Click += (_, _) =>
+            {
+                _settings.HideInVisualStudio = !_settings.HideInVisualStudio;
+                hideVs.Header = (_settings.HideInVisualStudio ? "✓ " : "") + "Скрываться в Visual Studio";
+                _settings.Save();
             };            var topmost = new MenuItem { Header = (_settings.AlwaysOnTop ? "✓ " : "") + "Поверх всех окон" };
             topmost.Click += (_, _) =>
             {
@@ -310,6 +317,7 @@ public partial class MainWindow : Window
             menu.Items.Add(lockDrag);
             menu.Items.Add(hideGames);
             menu.Items.Add(hideYoutube);
+            menu.Items.Add(hideVs);
             menu.Items.Add(topmost);
             menu.Items.Add(new Separator());
             menu.Items.Add(exit);
