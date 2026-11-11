@@ -115,6 +115,7 @@ public partial class MainWindow : Window
         ApplyCharacterLayout();
         Opacity = Math.Clamp(_settings.Opacity, 0.6, 1);
         MessagesList.ItemsSource = _messages;
+        ChatPanel.IsVisible = false;
         _hideTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _hideTimer.Tick += (_, _) =>
         {
@@ -195,6 +196,11 @@ public partial class MainWindow : Window
         {
             var point = args.GetCurrentPoint(CharacterImage);
             if (!point.Properties.IsLeftButtonPressed) return;
+            if (args.ClickCount == 2)
+            {
+                ChatPanel.IsVisible = !ChatPanel.IsVisible;
+                return;
+            }
             if (_lockDrag || _touchMode == "pet") return;
             _dragging = true;
             _dragMoved = false;
@@ -236,8 +242,7 @@ public partial class MainWindow : Window
         {
             if (!_dragging) return;
             _dragging = false;
-            if (!_dragMoved) ChatPanel.IsVisible = !ChatPanel.IsVisible;
-            else StartFall();
+            if (_dragMoved) StartFall();
         };
 
 
@@ -471,6 +476,15 @@ public partial class MainWindow : Window
         });
     }
 
+    private string? TryOpenApp(string text)
+    {
+        var match = Regex.Match(text.Trim(), @"^(открой|открыть|запусти|включи)\s+(.+)$", RegexOptions.IgnoreCase);
+        if (!match.Success) return null;
+        var target = match.Groups[2].Value.Trim();
+        if (target.Length == 0) return null;
+        var ok = _system.Launch(target);
+        return ok ? $"Открываю {target}." : $"Не нашла {target}.";
+    }
     private string? TryLaunchGame(string text)
     {
         var match = Regex.Match(text, @"(запусти|включи|открой|поиграем в)\s+(.+)", RegexOptions.IgnoreCase);
@@ -821,7 +835,7 @@ public partial class MainWindow : Window
         string reply;
         try
         {
-            reply = TryMemoryCommand(text) ?? TryLaunchGame(text) ?? await _llm.CompleteAsync(_history);
+            reply = TryMemoryCommand(text) ?? TryOpenApp(text) ?? TryLaunchGame(text) ?? await _llm.CompleteAsync(_history);
         }
         catch (Exception error)
         {
