@@ -41,8 +41,9 @@ public partial class MainWindow : Window
         Opened += (_, _) =>
         {
             var screen = Screens.Primary?.WorkingArea ?? new PixelRect(0, 0, 1920, 1080);
-            Position = new PixelPoint(screen.X + screen.Width - 420, screen.Y + 60);
+            Position = new PixelPoint(screen.X + screen.Width - 800, screen.Y + 60);
             StatusText.Text = $"голос: {(_tts.Available ? "Silero" : "нет")}";
+            LoadCharacter();
             CreateTray();
             var ask = Environment.GetEnvironmentVariable("ALYA_ASK");
             if (!string.IsNullOrWhiteSpace(ask))
@@ -67,6 +68,23 @@ public partial class MainWindow : Window
             Menu = menu
         };
         _tray.Clicked += (_, _) => ShowWindow();
+    }
+
+    private void LoadCharacter()
+    {
+        var frame = Environment.GetEnvironmentVariable("ALYA_FRAME")
+            ?? Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                "Projects", "jarvis", "resources", "anim", "VideoStand", "0000.webp");
+        if (!File.Exists(frame)) return;
+        try
+        {
+            CharacterImage.Source = new Avalonia.Media.Imaging.Bitmap(frame);
+        }
+        catch
+        {
+            // кадр не загрузился — окно всё равно работает
+        }
     }
 
     private void ShowWindow()
