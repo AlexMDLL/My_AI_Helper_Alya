@@ -919,6 +919,60 @@ public partial class MainWindow : Window
             ? "Перезагрузить компьютер? Скажи «подтверждаю» в течение 45 секунд."
             : "Выключить компьютер? Скажи «подтверждаю» в течение 45 секунд.";
     }
+    private string? TryMediaCommand(string text)
+    {
+        var lower = text.ToLowerInvariant();
+        if (lower.Contains("пауза") || lower.Contains("плей") || lower.Contains("плей") || lower.Contains("включи музыку") || lower.Contains("выключи музыку"))
+        {
+            _system.MediaKey(0xB3);
+            return "Пауза/воспроизведение.";
+        }
+        if (lower.Contains("следующий") && (lower.Contains("трек") || lower.Contains("песн")))
+        {
+            _system.MediaKey(0xB0);
+            return "Следующий трек.";
+        }
+        if (lower.Contains("предыдущ") && (lower.Contains("трек") || lower.Contains("песн")))
+        {
+            _system.MediaKey(0xB1);
+            return "Предыдущий трек.";
+        }
+        if (lower.Contains("громче") || lower.Contains("прибавь звук"))
+        {
+            _system.MediaKey(0xAF);
+            return "Сделала громче.";
+        }
+        if (lower.Contains("тише") || lower.Contains("убавь звук"))
+        {
+            _system.MediaKey(0xAE);
+            return "Сделала тише.";
+        }
+        if (lower.Contains("без звука") || lower.Contains("замьють") || lower.Contains("mute"))
+        {
+            _system.MediaKey(0xAD);
+            return "Звук выключен.";
+        }
+        return null;
+    }
+
+    private string? TryWindowCommand(string text)
+    {
+        var lower = text.ToLowerInvariant();
+        if (lower.Contains("сверни") || lower.Contains("свернуть") && lower.Contains("вс"))
+        {
+            _system.MinimizeAll();
+            return "Свернула все окна.";
+        }
+        if (lower.Contains("что открыто") || lower.Contains("какие окна") || lower.Contains("что у меня открыто"))
+        {
+            var windows = _system.VisibleWindows();
+            return windows.Count == 0 ? "Не вижу открытых окон." : "Открыто: " + string.Join("; ", windows);
+        }
+        var match = Regex.Match(text, @"переключи(?:сь)?\s+(?:на|в)\s+(.+)$", RegexOptions.IgnoreCase);
+        if (!match.Success) return null;
+        var target = match.Groups[1].Value.Trim().Trim('.', '!', '?', ',');
+        return _system.Activate(target) ? $"Переключилась на {target}." : $"Не нашла окно {target}.";
+    }
     private string? TryCloseApp(string text)
     {
         var match = Regex.Match(text.Trim(), @"(закрой|закрыть|выключи|заверши|убей)\s+(.+)$", RegexOptions.IgnoreCase);
@@ -1389,7 +1443,7 @@ public partial class MainWindow : Window
         Bubble? streamedBubble = null;
         try
         {
-            var quick = TryMemoryCommand(text) ?? TryTimerCommand(text) ?? TryPowerCommand(text) ?? TryScreenCommand(text) ?? TryCloseApp(text) ?? TryOpenApp(text) ?? TryLaunchGame(text);
+            var quick = TryMemoryCommand(text) ?? TryTimerCommand(text) ?? TryPowerCommand(text) ?? TryMediaCommand(text) ?? TryWindowCommand(text) ?? TryCloseApp(text) ?? TryOpenApp(text) ?? TryLaunchGame(text);
             if (quick is null) quick = await TryWeatherAsync(text);
             if (quick is not null)
             {

@@ -17,6 +17,20 @@ public sealed class WindowsSystemController : Alya.Core.ISystemController
     [DllImport("user32.dll")]
     private static extern bool ShowWindow(IntPtr handle, int command);
 
+    [DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(IntPtr handle);
+
+    [DllImport("user32.dll")]
+    private static extern void keybd_event(byte key, byte scan, uint flags, UIntPtr extra);
+
+    private delegate bool EnumProc(IntPtr handle, IntPtr param);
+
+    [DllImport("user32.dll")]
+    private static extern bool EnumWindows(EnumProc callback, IntPtr param);
+
+    [DllImport("user32.dll")]
+    private static extern bool IsWindowVisible(IntPtr handle);
+
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
     private static extern int GetWindowText(IntPtr handle, global::System.Text.StringBuilder text, int max);
 
@@ -33,6 +47,55 @@ public sealed class WindowsSystemController : Alya.Core.ISystemController
         {
             return null;
         }
+    }
+
+    public void MediaKey(byte key)
+    {
+        keybd_event(key, 0, 0, UIntPtr.Zero);
+        keybd_event(key, 0, 2, UIntPtr.Zero);
+    }
+
+    public void MinimizeAll()
+    {
+        keybd_event(0x5B, 0, 0, UIntPtr.Zero);
+        keybd_event(0x44, 0, 0, UIntPtr.Zero);
+        keybd_event(0x44, 0, 2, UIntPtr.Zero);
+        keybd_event(0x5B, 0, 2, UIntPtr.Zero);
+    }
+
+    public bool Activate(string query)
+    {
+        var found = IntPtr.Zero;
+        EnumWindows((handle, _) =>
+        {
+            if (!IsWindowVisible(handle)) return true;
+            var builder = new global::System.Text.StringBuilder(512);
+            GetWindowText(handle, builder, builder.Capacity);
+            var title = builder.ToString();
+            if (title.Length == 0) return true;
+            if (!title.Contains(query, StringComparison.OrdinalIgnoreCase)) return true;
+            found = handle;
+            return false;
+        }, IntPtr.Zero);
+        if (found == IntPtr.Zero) return false;
+        ShowWindow(found, SwRestore);
+        SetForegroundWindow(found);
+        return true;
+    }
+
+    public IReadOnlyList<string> VisibleWindows()
+    {
+        var list = new List<string>();
+        EnumWindows((handle, _) =>
+        {
+            if (!IsWindowVisible(handle)) return true;
+            var builder = new global::System.Text.StringBuilder(512);
+            GetWindowText(handle, builder, builder.Capacity);
+            var title = builder.ToString().Trim();
+            if (title.Length > 1) list.Add(title);
+            return true;
+        }, IntPtr.Zero);
+        return list.Distinct().Take(12).ToList();
     }
 
     public string ForegroundWindowTitle()
