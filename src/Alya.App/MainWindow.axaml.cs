@@ -154,6 +154,21 @@ public partial class MainWindow : Window
         HeaderBar.PointerReleased += (_, _) => _panelDragging = false;
 
         SettingsButton.Click += (_, _) => OpenSettings();
+        CharacterImage.PointerWheelChanged += (_, args) =>
+        {
+            var delta = args.Delta.Y > 0 ? 0.05 : -0.05;
+            if (args.KeyModifiers.HasFlag(KeyModifiers.Shift))
+            {
+                _settings.PersonaOffset = Math.Clamp(_settings.PersonaOffset - (int)(delta * 200), 0, 200);
+            }
+            else
+            {
+                _settings.PersonaScale = Math.Clamp(Math.Round(_settings.PersonaScale + delta, 2), 0.6, 1.3);
+            }
+            _settings.Save();
+            ApplyCharacterLayout();
+            args.Handled = true;
+        };
         CharacterImage.PointerPressed += (_, args) =>
         {
             var point = args.GetCurrentPoint(CharacterImage);
@@ -612,6 +627,7 @@ public partial class MainWindow : Window
         }
 
         CharacterFade.Source = bitmap;
+        CharacterFade.IsVisible = true;
         CharacterFade.Opacity = 0;
         var fade = new Animation
         {
@@ -627,6 +643,7 @@ public partial class MainWindow : Window
         CharacterImage.Source = bitmap;
         CharacterFade.Opacity = 0;
         CharacterFade.Source = null;
+        CharacterFade.IsVisible = false;
     }
     private void UpdateClickThrough()
     {

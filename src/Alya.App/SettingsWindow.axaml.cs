@@ -86,6 +86,21 @@ public partial class SettingsWindow : Window
         GreenSlider.PropertyChanged += (_, args) => { if (args.Property == Slider.ValueProperty) UpdateAccentFromRgb(); };
         BlueSlider.PropertyChanged += (_, args) => { if (args.Property == Slider.ValueProperty) UpdateAccentFromRgb(); };
 
+        ScaleSlider.PropertyChanged += (_, args) =>
+        {
+            if (args.Property != Slider.ValueProperty) return;
+            _settings.PersonaScale = Math.Round(ScaleSlider.Value, 2);
+            _settings.PersonaOffset = (int)OffsetSlider.Value;
+            _settings.Save();
+        };
+        OffsetSlider.PropertyChanged += (_, args) =>
+        {
+            if (args.Property != Slider.ValueProperty) return;
+            _settings.PersonaScale = Math.Round(ScaleSlider.Value, 2);
+            _settings.PersonaOffset = (int)OffsetSlider.Value;
+            _settings.Save();
+        };
+
         CheckModelButton.Click += async (_, _) => await CheckOllamaAsync();
         ClearMemoryButton.Click += (_, _) => ClearMemory();
         PreviewVoiceButton.Click += (_, _) => PreviewVoice();
