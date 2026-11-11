@@ -15,6 +15,7 @@ public sealed class VoiceInputService : IDisposable
     private DateTime _lastVoice = DateTime.MinValue;
     private bool _hadSpeech;
     private bool _busy;
+    private DateTime _lastLevelLog = DateTime.MinValue;
     private int _sampleRate = 16000;
 
     public event Action<string>? TextRecognized;
@@ -80,7 +81,7 @@ public sealed class VoiceInputService : IDisposable
         var chunk = new byte[args.BytesRecorded];
         Array.Copy(args.Buffer, chunk, args.BytesRecorded);
         var level = Rms(chunk);
-        var hasVoice = level > 0.008f;
+        var hasVoice = level > 0.004f;
 
         lock (_gate)
         {
@@ -92,7 +93,7 @@ public sealed class VoiceInputService : IDisposable
             }
 
             if (!_hadSpeech || _busy) return;
-            if ((DateTime.Now - _lastVoice).TotalMilliseconds < 600) return;
+            if ((DateTime.Now - _lastVoice).TotalMilliseconds < 550) return;
             if (_buffer.Length < _sampleRate * 2 * 0.3) return;
 
             _hadSpeech = false;
@@ -123,9 +124,9 @@ public sealed class VoiceInputService : IDisposable
             Log($"heard: {text}");
             if (text.Length >= 2) TextRecognized?.Invoke(text);
         }
-        catch
+        catch (Exception error)
         {
-            // распознавание не удалось
+            Log($"transcribe failed: {error.Message}");
         }
         finally
         {

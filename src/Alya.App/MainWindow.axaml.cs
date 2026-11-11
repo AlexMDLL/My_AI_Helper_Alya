@@ -161,7 +161,7 @@ public partial class MainWindow : Window
                 args.Handled = true;
             }
         };
-        CloseButton.Click += (_, _) => Hide();
+        CloseButton.Click += (_, _) => ChatPanel.IsVisible = false;
         HeaderBar.PointerPressed += (_, args) =>
         {
             if (args.Source is Button) return;
