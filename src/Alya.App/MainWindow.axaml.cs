@@ -594,6 +594,9 @@ public partial class MainWindow : Window
         Dispatcher.UIThread.Post(() =>
         {
             try { File.AppendAllText(Path.Combine(Path.GetTempPath(), "alya-voice.log"), $"{DateTime.Now:HH:mm:ss} ui got: {text}\n"); } catch { }
+            var cleanedText = text.Replace("[музыка]", string.Empty).Replace("[шум]", string.Empty).Replace("[аплодисменты]", string.Empty).Trim();
+            if (cleanedText.Length < 2 || cleanedText.StartsWith("[")) return;
+            text = cleanedText;
             var lower = text.ToLowerInvariant();
             var hasWake = lower.Contains("аля") || lower.Contains("алла") || lower.Contains("алю") || lower.Contains("але") || lower.Contains("ало");
             if (!_settings.AlwaysListen && !hasWake) return;
