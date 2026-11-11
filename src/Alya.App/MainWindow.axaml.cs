@@ -159,7 +159,7 @@ public partial class MainWindow : Window
             var delta = args.Delta.Y > 0 ? 0.05 : -0.05;
             if (args.KeyModifiers.HasFlag(KeyModifiers.Shift))
             {
-                _settings.PersonaOffset = Math.Clamp(_settings.PersonaOffset - (int)(delta * 200), 0, 200);
+                _settings.PersonaOffset = Math.Clamp(_settings.PersonaOffset - (int)(delta * 200), -100, 200);
             }
             else
             {
@@ -694,8 +694,8 @@ public partial class MainWindow : Window
         var scale = Math.Clamp(_settings.PersonaScale, 0.6, 1.3);
         CharacterImage.RenderTransform = new ScaleTransform(scale, scale);
         CharacterFade.RenderTransform = new ScaleTransform(scale, scale);
-        CharacterImage.Margin = new Avalonia.Thickness(0, 0, 10, -Math.Clamp(_settings.PersonaOffset, 0, 200));
-        CharacterFade.Margin = new Avalonia.Thickness(0, 0, 10, -Math.Clamp(_settings.PersonaOffset, 0, 200));
+        CharacterImage.Margin = new Avalonia.Thickness(0, 0, 10, -Math.Clamp(_settings.PersonaOffset, -100, 200));
+        CharacterFade.Margin = new Avalonia.Thickness(0, 0, 10, -Math.Clamp(_settings.PersonaOffset, -100, 200));
     }
     private void ApplyAccent()
     {

@@ -173,7 +173,7 @@
             <TextBlock Text="Размер персонажа" Classes="label"/>
             <Slider x:Name="ScaleSlider" Minimum="0.6" Maximum="1.3" TickFrequency="0.01"/>
             <TextBlock Text="Сдвиг вниз, px" Classes="label"/>
-            <Slider x:Name="OffsetSlider" Minimum="0" Maximum="200" TickFrequency="1"/>
+            <Slider x:Name="OffsetSlider" Minimum="-100" Maximum="200" TickFrequency="1"/>
             <TextBlock Text="Прозрачность окна" Classes="label"/>
             <Slider x:Name="OpacitySlider" Minimum="0.6" Maximum="1" TickFrequency="0.02"/>
             <TextBlock Text="Цвет акцента" Classes="label"/>
