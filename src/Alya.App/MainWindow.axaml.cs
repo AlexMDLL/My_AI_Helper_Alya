@@ -113,7 +113,7 @@ public partial class MainWindow : Window
         _piper.OnEvent += kind => Dispatcher.UIThread.Post(() => HandleVoiceEvent(kind));
         _llm.ExtraContext = _memory.ToPrompt();
         ApplyAccent();
-        ApplyCharacterLayout();
+        ApplyWindowMode();
         Opacity = Math.Clamp(_settings.Opacity, 0.6, 1);
         MessagesList.ItemsSource = _messages;
         ChatPanel.IsVisible = false;
@@ -293,11 +293,7 @@ public partial class MainWindow : Window
 
         Opened += (_, _) =>
         {
-            var screen = Screens.Primary?.WorkingArea ?? new PixelRect(0, 0, 1920, 1080);
-            var targetX = screen.X + screen.Width - 800;
-            targetX = Math.Clamp(targetX, screen.X, screen.X + screen.Width - (int)Width);
-            var targetY = Math.Clamp(screen.Y + 60, screen.Y, screen.Y + screen.Height - (int)Height);
-            Position = new PixelPoint(targetX, targetY);
+            ApplyWindowMode();
             StatusText.Text = $"голос: {(_silero.Available ? "Silero" : _piper.Available ? "Piper" : "Windows")}";
             LoadCharacter();
             _voiceInput.TextRecognized += OnVoiceText;
@@ -569,7 +565,7 @@ public partial class MainWindow : Window
             _memory.AddFact(fact);
             _llm.ExtraContext = _memory.ToPrompt();
         ApplyAccent();
-        ApplyCharacterLayout();
+        ApplyWindowMode();
         Opacity = Math.Clamp(_settings.Opacity, 0.6, 1);
             return $"Запомнила: {fact}";
         }
@@ -580,7 +576,7 @@ public partial class MainWindow : Window
             _memory.AddRule(rule);
             _llm.ExtraContext = _memory.ToPrompt();
         ApplyAccent();
-        ApplyCharacterLayout();
+        ApplyWindowMode();
         Opacity = Math.Clamp(_settings.Opacity, 0.6, 1);
             return "Хорошо, буду соблюдать.";
         }
@@ -801,6 +797,28 @@ public partial class MainWindow : Window
         window.Show(this);
     }
 
+    private void ApplyWindowMode()
+    {
+        var screen = Screens.Primary;
+        if (screen is null) return;
+        if (_settings.Fullscreen)
+        {
+            Topmost = false;
+            var scaling = RenderScaling <= 0 ? 1 : RenderScaling;
+            Width = screen.Bounds.Width / scaling;
+            Height = screen.Bounds.Height / scaling;
+            Position = new PixelPoint(screen.Bounds.X, screen.Bounds.Y);
+        }
+        else
+        {
+            Topmost = true;
+            Width = 780;
+            Height = 720;
+            var area = screen.WorkingArea;
+            Position = new PixelPoint(area.X + area.Width - 800, area.Y + 60);
+        }
+        ApplyCharacterLayout();
+    }
     private void ApplyCharacterLayout()
     {
         var scale = Math.Clamp(_settings.PersonaScale, 0.6, 1.3);

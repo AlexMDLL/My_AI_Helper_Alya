@@ -169,7 +169,8 @@
           </StackPanel>
 
           <StackPanel x:Name="PanelView" Spacing="4" IsVisible="False">
-            <CheckBox x:Name="DragEnabledBox" Content="Разрешить перетаскивание" Margin="0,6,0,0"/>
+            <CheckBox x:Name="FullscreenBox" Content="Полноэкранный режим (за панелью задач)" Margin="0,6,0,0"/>
+            <CheckBox x:Name="DragEnabledBox" Content="Разрешить перетаскивание" Margin="0,4,0,0"/>
             <CheckBox x:Name="FallEnabledBox" Content="Физика падения" Margin="0,4,0,0"/>
             <CheckBox x:Name="PetEnabledBox" Content="Поглаживания" Margin="0,4,0,0"/>
             <TextBlock Text="Кадров в секунду" Classes="label"/>
