@@ -627,6 +627,8 @@ public partial class MainWindow : Window
             var cleanedText = text.Replace("[музыка]", string.Empty).Replace("[шум]", string.Empty).Replace("[аплодисменты]", string.Empty).Trim();
             if (cleanedText.Length < 2 || cleanedText.StartsWith("[")) return;
             text = cleanedText;
+            var hallu = new[] { "субтитры", "смотрите видео", "продолжение следует", "спасибо за просмотр", "подписывайтесь на канал" };
+            if (hallu.Any(text.Contains)) return;
             var lower = text.ToLowerInvariant();
             var hasWake = lower.Contains("аля") || lower.Contains("алла") || lower.Contains("алю") || lower.Contains("але") || lower.Contains("ало") || lower.Contains("оля") || lower.Contains("алекс");
             if (!_settings.AlwaysListen && !hasWake) return;
