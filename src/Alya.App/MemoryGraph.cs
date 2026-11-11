@@ -38,6 +38,8 @@ public sealed class MemoryGraph : Control
     private double _appear;
     private GraphNode? _hover;
     private bool _autoZoomed;
+    private bool _centered;
+    private Point _centroid;
 
     public event Action<GraphNode?>? SelectionChanged;
 
@@ -81,9 +83,20 @@ public sealed class MemoryGraph : Control
             }
         }
         Layout();
+        _centroid = new Point(_nodes.Average(n => n.X), _nodes.Average(n => n.Y));
+        _centered = false;
         _appear = 0;
     }
 
+    private void CenterView()
+    {
+        if (_nodes.Count == 0 || Bounds.Width < 10) return;
+        var maxDistance = _nodes.Max(node => Math.Sqrt(Math.Pow(node.X - _centroid.X, 2) + Math.Pow(node.Y - _centroid.Y, 2)));
+        maxDistance = Math.Max(60, maxDistance);
+        _zoom = Math.Min(1.15, Math.Min(Bounds.Width, Bounds.Height) * 0.42 / maxDistance);
+        _pan = new Point(Bounds.Width / 2 - _centroid.X * _zoom, Bounds.Height / 2 - _centroid.Y * _zoom);
+        _centered = true;
+    }
     private void Layout()
     {
         if (_nodes.Count == 0) return;
@@ -161,6 +174,12 @@ public sealed class MemoryGraph : Control
         base.Render(context);
         var background = new SolidColorBrush(Color.Parse("#C4070B14"));
         context.FillRectangle(background, new Rect(Bounds.Size));
+        if (!_centered) CenterView();
+        var centerOnScreen = ToScreen(_centroid.X, _centroid.Y);
+        var crossPen = new Pen(new SolidColorBrush(Color.Parse("#3A6FA0")) { Opacity = 0.45 }, 1);
+        context.DrawLine(crossPen, new Point(centerOnScreen.X - 6, centerOnScreen.Y), new Point(centerOnScreen.X + 6, centerOnScreen.Y));
+        context.DrawLine(crossPen, new Point(centerOnScreen.X, centerOnScreen.Y - 6), new Point(centerOnScreen.X, centerOnScreen.Y + 6));
+        context.DrawEllipse(new SolidColorBrush(Color.Parse("#3A6FA0")) { Opacity = 0.5 }, null, centerOnScreen, 2, 2);
         if (_nodes.Count == 0)
         {
             var empty = new FormattedText("Память пуста", CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
