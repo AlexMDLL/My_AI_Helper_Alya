@@ -44,6 +44,8 @@ public partial class MainWindow : Window
     private DateTime _lastPetAt = DateTime.MinValue;
     private DispatcherTimer? _focusTimer;
     private string _lastFocusCategory = string.Empty;
+    private readonly HashSet<string> _knownPrograms = new(StringComparer.OrdinalIgnoreCase);
+    private bool _programsInitialized;
     private DateTime _lastFocusReactionAt = DateTime.MinValue;
     private static readonly string[] GameProcesses =
     {
@@ -156,8 +158,8 @@ public partial class MainWindow : Window
             _clickTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(60) };
             _clickTimer.Tick += (_, _) => UpdateClickThrough();
             _clickTimer.Start();
-            _focusTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(45) };
-            _focusTimer.Tick += (_, _) => CheckFocus();
+            _focusTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
+            _focusTimer.Tick += (_, _) => DetectLaunches();
             _focusTimer.Start();
             var ask = Environment.GetEnvironmentVariable("ALYA_ASK");
             if (!string.IsNullOrWhiteSpace(ask))
@@ -365,28 +367,37 @@ public partial class MainWindow : Window
         });
     }
 
-    private void CheckFocus()
+    private void DetectLaunches()
     {
         if (_talking) return;
-        var process = _system.ForegroundProcess();
-        if (string.IsNullOrEmpty(process) || process.Contains("alya") || process.Contains("electron")) return;
-        var category = GameProcesses.Any(process.Contains) ? "game"
-            : WorkProcesses.Any(process.Contains) ? "work"
-            : string.Empty;
-        if (category.Length == 0)
+        var running = _system.RunningProcesses();
+        var interesting = new HashSet<string>(
+            running.Where(name => GameProcesses.Any(name.Contains) || WorkProcesses.Any(name.Contains)),
+            StringComparer.OrdinalIgnoreCase);
+        if (!_programsInitialized)
         {
-            _lastFocusCategory = string.Empty;
+            foreach (var name in interesting) _knownPrograms.Add(name);
+            _programsInitialized = true;
             return;
         }
-        if (category == _lastFocusCategory) return;
-        if ((DateTime.Now - _lastFocusReactionAt).TotalMinutes < 6) return;
-        _lastFocusCategory = category;
-        _lastFocusReactionAt = DateTime.Now;
 
-        var phrases = category == "game"
-            ? new[] { "А со мной ты не играешь?", "Опять играешь? Ну ладно, я подожду.", "Играешь без меня? Обидно, знаешь ли." }
-            : new[] { "Работаешь? Ну ладно, не буду мешать! Долго не работай.", "Трудишься? Не забудь отдохнуть.", "Я рядом, если что. Но не сиди так долго." };
+        var launched = interesting.Where(name => !_knownPrograms.Contains(name)).ToList();
+        foreach (var name in interesting) _knownPrograms.Add(name);
+        foreach (var name in _knownPrograms.ToList())
+        {
+            if (!interesting.Contains(name)) _knownPrograms.Remove(name);
+        }
+        if (launched.Count == 0) return;
+        if ((DateTime.Now - _lastFocusReactionAt).TotalMinutes < 3) return;
+
+        var launchedName = launched[0];
+        var isGame = GameProcesses.Any(launchedName.Contains);
+        var phrases = isGame
+            ? new[] { "О, играешь? А со мной ты не играешь?", "Запустил игру без меня? Ну ладно.", "Играешь? Я подожду. Наверное." }
+            : new[] { "Работаешь? Ну ладно, не буду мешать! Долго не работай.", "Вижу, открыл рабочее. Не забудь отдохнуть.", "Трудишься? Я рядом, если что." };
         var phrase = phrases[Random.Shared.Next(phrases.Length)];
+        _lastFocusReactionAt = DateTime.Now;
+        _lastFocusCategory = isGame ? "game" : "work";
         _talking = true;
         Add("alya", phrase);
         PlayScene("VideoTalk");
