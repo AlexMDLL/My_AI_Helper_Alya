@@ -26,7 +26,9 @@ public sealed class VoiceInputService : IDisposable
         var candidates = new List<string>();
         var custom = Environment.GetEnvironmentVariable("ALYA_WHISPER_MODEL");
         if (!string.IsNullOrWhiteSpace(custom)) candidates.Add(custom);
+        candidates.Add(Path.Combine(AppContext.BaseDirectory, "tools", "whisper", "ggml-small.bin"));
         candidates.Add(Path.Combine(AppContext.BaseDirectory, "tools", "whisper", "ggml-base.bin"));
+        candidates.Add(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Projects", "alya-next", "tools", "whisper", "ggml-small.bin"));
         candidates.Add(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Projects", "alya-next", "tools", "whisper", "ggml-base.bin"));
         _modelPath = modelPath ?? candidates.FirstOrDefault(File.Exists) ?? candidates[^1];
         _wave = new WaveInEvent
