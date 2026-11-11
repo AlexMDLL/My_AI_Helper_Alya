@@ -854,7 +854,8 @@ public partial class MainWindow : Window
     }
     private void ApplyCharacterLayout()
     {
-        var scale = Math.Clamp(_settings.PersonaScale, 0.6, 1.3);
+        var baseScale = ChatPanel.IsVisible ? 1.0 : 1.22;
+        var scale = Math.Clamp(_settings.PersonaScale, 0.6, 1.3) * baseScale;
         CharacterImage.RenderTransform = new ScaleTransform(scale, scale);
         CharacterFade.RenderTransform = new ScaleTransform(scale, scale);
         CharacterImage.Margin = new Avalonia.Thickness(0, 0, 10, -Math.Clamp(_settings.PersonaOffset, -100, 200));
