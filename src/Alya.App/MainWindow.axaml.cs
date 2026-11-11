@@ -19,6 +19,10 @@ public partial class MainWindow : Window
     private readonly TcpSileroTtsService _tts = new();
     private readonly OllamaLlmClient _llm = new();
     private readonly List<ChatMessage> _history = new();
+    private readonly Dictionary<int, Avalonia.Media.Imaging.Bitmap> _cache = new();
+    private string[] _frames = Array.Empty<string>();
+    private int _frame;
+    private DispatcherTimer? _animTimer;
     private readonly ObservableCollection<Bubble> _messages = new();
     private TrayIcon? _tray;
 
@@ -72,18 +76,56 @@ public partial class MainWindow : Window
 
     private void LoadCharacter()
     {
-        var frame = Environment.GetEnvironmentVariable("ALYA_FRAME")
+        var directory = Environment.GetEnvironmentVariable("ALYA_ANIM_DIR")
             ?? Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                "Projects", "jarvis", "resources", "anim", "VideoStand", "0000.webp");
-        if (!File.Exists(frame)) return;
-        try
+                "Projects", "jarvis", "resources", "anim", "VideoStand");
+        if (!Directory.Exists(directory)) return;
+
+        _frames = Directory.GetFiles(directory, "*.webp")
+            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        if (_frames.Length == 0) return;
+
+        ShowFrame(0);
+        _animTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(42) };
+        _animTimer.Tick += (_, _) =>
         {
-            CharacterImage.Source = new Avalonia.Media.Imaging.Bitmap(frame);
+            _frame = (_frame + 1) % _frames.Length;
+            ShowFrame(_frame);
+        };
+        _animTimer.Start();
+    }
+
+    private void ShowFrame(int index)
+    {
+        if (_frames.Length == 0) return;
+        if (!_cache.TryGetValue(index, out var bitmap))
+        {
+            try
+            {
+                bitmap = new Avalonia.Media.Imaging.Bitmap(_frames[index]);
+            }
+            catch
+            {
+                return;
+            }
+            _cache[index] = bitmap;
+            TrimCache(index);
         }
-        catch
+        CharacterImage.Source = bitmap;
+    }
+
+    private void TrimCache(int current)
+    {
+        if (_cache.Count <= 60) return;
+        foreach (var key in _cache.Keys.ToList())
         {
-            // кадр не загрузился — окно всё равно работает
+            var distance = Math.Abs(key - current);
+            if (distance > 40 && distance < _frames.Length - 40)
+            {
+                _cache.Remove(key);
+            }
         }
     }
 
