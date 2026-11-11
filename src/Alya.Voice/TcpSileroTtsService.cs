@@ -61,6 +61,11 @@ public sealed class TcpSileroTtsService : ITtsService, IDisposable
         return Task.CompletedTask;
     }
 
+    public void Stop()
+    {
+        Send("{\"cmd\":\"stopSpeech\"}");
+    }
+
     private void Send(string payload)
     {
         lock (_gate)

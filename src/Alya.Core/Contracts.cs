@@ -22,6 +22,7 @@ public interface IAsrService
 public interface ITtsService
 {
     Task SpeakAsync(string text, string emotion = "neutral", CancellationToken cancellationToken = default);
+    void Stop();
 }
 
 /// <summary>Языковая модель (Ollama / OpenRouter / DeepSeek).</summary>

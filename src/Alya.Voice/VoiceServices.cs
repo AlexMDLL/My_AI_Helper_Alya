@@ -12,6 +12,8 @@ public sealed class SileroTtsService : ITtsService
         Console.WriteLine($"[TTS:{emotion}] {text}");
         return Task.CompletedTask;
     }
+
+    public void Stop() { }
 }
 
 /// <summary>

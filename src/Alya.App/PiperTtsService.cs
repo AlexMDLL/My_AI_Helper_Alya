@@ -11,6 +11,7 @@ public sealed class PiperTtsService : ITtsService, IDisposable
     private readonly string _model;
     private readonly string _espeakData;
     private readonly object _gate = new();
+    private SoundPlayer? _player;
 
     public event Action<string>? OnEvent;
     public double Pitch { get; set; } = 1.12;
@@ -85,6 +86,7 @@ public sealed class PiperTtsService : ITtsService, IDisposable
                 PitchShift(wav, 1.0 + (Pitch - 1.0) * 0.6);
                 OnEvent?.Invoke("tts_start");
                 using var player = new SoundPlayer(wav);
+                _player = player;
                 player.PlaySync();
             }
             catch
@@ -173,6 +175,11 @@ public sealed class PiperTtsService : ITtsService, IDisposable
             // если не получилось — играем как есть
         }
     }
+    public void Stop()
+    {
+        try { _player?.Stop(); } catch { }
+    }
+
     public void Dispose()
     {
         // ресурсов не держим

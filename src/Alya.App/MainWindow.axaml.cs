@@ -55,6 +55,7 @@ public partial class MainWindow : Window
     private DateTime _talkingStarted;
     private DispatcherTimer? _pttTimer;
     private bool _pttDown;
+    private CancellationTokenSource? _llmCts;
     private DispatcherTimer? _pttResetTimer;
     private readonly List<(DateTime Due, string Message)> _reminders = new();
     private DispatcherTimer? _reminderTimer;
@@ -181,6 +182,7 @@ public partial class MainWindow : Window
             if (pressed && !_pttDown)
             {
                 _pttDown = true;
+                if (_talking) StopSpeech();
                 _voiceInput.BeginPushToTalk();
                 StatusText.Text = "слушаю…";
             }
@@ -694,8 +696,29 @@ public partial class MainWindow : Window
         });
     }
 
+    private void StopSpeech()
+    {
+        try
+        {
+            _tts.Stop();
+        }
+        catch
+        {
+            // синтез уже остановлен
+        }
+        _llmCts?.Cancel();
+        _talking = false;
+        StatusText.Text = "на связи";
+        PlayScene("VideoStand");
+    }
     private void OnVoiceText(string text)
     {
+        var stopLower = text.ToLowerInvariant();
+        if (stopLower.Contains("стоп") || stopLower.Contains("хватит") || stopLower.Contains("замолчи") || stopLower.Contains("тихо"))
+        {
+            StopSpeech();
+            return;
+        }
         if (_talking) return;
         Dispatcher.UIThread.Post(() =>
         {
@@ -1328,7 +1351,17 @@ public partial class MainWindow : Window
             else
             {
                 var placeholder = Add("alya", "…");
-                reply = await _llm.CompleteStreamingAsync(_history, delta => Dispatcher.UIThread.Post(() => placeholder.Text += delta));
+                _llmCts?.Dispose();
+                _llmCts = new CancellationTokenSource();
+                try
+                {
+                    reply = await _llm.CompleteStreamingAsync(_history, delta => Dispatcher.UIThread.Post(() => placeholder.Text += delta), _llmCts.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    reply = placeholder.Text.Trim();
+                    if (string.IsNullOrWhiteSpace(reply)) reply = "Ладно, молчу.";
+                }
                 if (string.IsNullOrWhiteSpace(reply)) reply = "…";
                 placeholder.Text = reply;
                 streamedBubble = placeholder;

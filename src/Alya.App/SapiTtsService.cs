@@ -54,6 +54,11 @@ public sealed class SapiTtsService : ITtsService, IDisposable
         return Task.CompletedTask;
     }
 
+    public void Stop()
+    {
+        try { _synth.SpeakAsyncCancelAll(); } catch { }
+    }
+
     public void Dispose()
     {
         try
