@@ -27,6 +27,8 @@ public partial class MainWindow : Window
     private int _frame;
     private int _oneShotLeft;
     private bool _talking;
+    private bool _prefetching;
+    private readonly object _cacheLock = new();
     private DispatcherTimer? _animTimer;
     private DispatcherTimer? _gestureTimer;
     private readonly ObservableCollection<Bubble> _messages = new();
@@ -100,7 +102,7 @@ public partial class MainWindow : Window
         if (!_scenes.ContainsKey("VideoStand")) return;
 
         PlayScene("VideoStand");
-        _animTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
+        _animTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(8) };
         _animTimer.Tick += (_, _) => Tick();
         _animTimer.Start();
 
@@ -144,7 +146,12 @@ public partial class MainWindow : Window
     {
         if (_frames.Length == 0) return;
         var path = _frames[index];
-        if (!_cache.TryGetValue(path, out var bitmap))
+        Avalonia.Media.Imaging.Bitmap? bitmap = null;
+        lock (_cacheLock)
+        {
+            _cache.TryGetValue(path, out bitmap);
+        }
+        if (bitmap is null)
         {
             try
             {
@@ -154,15 +161,64 @@ public partial class MainWindow : Window
             {
                 return;
             }
-            _cache[path] = bitmap;
-            _cacheOrder.Enqueue(path);
-            while (_cacheOrder.Count > 120)
+            lock (_cacheLock)
             {
-                var old = _cacheOrder.Dequeue();
-                if (!string.Equals(old, path, StringComparison.OrdinalIgnoreCase)) _cache.Remove(old);
+                _cache[path] = bitmap;
+                _cacheOrder.Enqueue(path);
+                while (_cacheOrder.Count > 240)
+                {
+                    var old = _cacheOrder.Dequeue();
+                    if (!string.Equals(old, path, StringComparison.OrdinalIgnoreCase)) _cache.Remove(old);
+                }
             }
         }
         CharacterImage.Source = bitmap;
+        Prefetch();
+    }
+
+    private void Prefetch()
+    {
+        if (_prefetching || _frames.Length == 0) return;
+        _prefetching = true;
+        var snapshot = _frames;
+        var start = _frame;
+        Task.Run(() =>
+        {
+            try
+            {
+                for (var offset = 1; offset <= 90; offset++)
+                {
+                    var index = (start + offset) % snapshot.Length;
+                    var path = snapshot[index];
+                    lock (_cacheLock)
+                    {
+                        if (_cache.ContainsKey(path)) continue;
+                    }
+                    try
+                    {
+                        var bitmap = new Avalonia.Media.Imaging.Bitmap(path);
+                        lock (_cacheLock)
+                        {
+                            _cache[path] = bitmap;
+                            _cacheOrder.Enqueue(path);
+                            while (_cacheOrder.Count > 240)
+                            {
+                                var old = _cacheOrder.Dequeue();
+                                if (!string.Equals(old, path, StringComparison.OrdinalIgnoreCase)) _cache.Remove(old);
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // отдельный кадр не критичен
+                    }
+                }
+            }
+            finally
+            {
+                _prefetching = false;
+            }
+        });
     }
 
     private void ShowWindow()
@@ -195,9 +251,10 @@ public partial class MainWindow : Window
         try
         {
             _talking = true;
-            PlayScene("VideoTalk");
             StatusText.Text = "говорит…";
             await _tts.SpeakAsync(reply, "neutral");
+            await Task.Delay(500);
+            PlayScene("VideoTalk");
             var duration = Math.Clamp(reply.Length * 65, 1200, 12000);
             await Task.Delay(duration);
         }
