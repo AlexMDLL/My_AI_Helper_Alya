@@ -52,6 +52,7 @@ public partial class MainWindow : Window
     private bool _initialized;
     private string? _pendingPower;
     private DateTime _pendingPowerAt;
+    private DateTime _talkingStarted;
     private DateTime _lastActivity = DateTime.Now;
     private DispatcherTimer? _hideTimer;
     private DispatcherTimer? _bubbleTimer;
@@ -153,6 +154,16 @@ public partial class MainWindow : Window
             }
         };
         memoryTimer.Start();
+        var talkWatchdog = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
+        talkWatchdog.Tick += (_, _) =>
+        {
+            if (!_talking) return;
+            if ((DateTime.Now - _talkingStarted).TotalSeconds < 30) return;
+            _talking = false;
+            StatusText.Text = "на связи";
+            PlayScene("VideoStand");
+        };
+        talkWatchdog.Start();
         _hideTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _hideTimer.Tick += (_, _) =>
         {
@@ -397,6 +408,27 @@ public partial class MainWindow : Window
             LoadCharacter();
             _voiceInput.TextRecognized += OnVoiceText;
             _voiceInput.Start();
+        global::System.Threading.Tasks.Task.Run(async () =>
+        {
+            try
+            {
+                using var probe = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
+                await probe.GetStringAsync("http://127.0.0.1:11434/api/tags");
+            }
+            catch
+            {
+                try
+                {
+                    var ollamaApp = global::System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "Ollama", "ollama app.exe");
+                    if (global::System.IO.File.Exists(ollamaApp)) global::System.Diagnostics.Process.Start(new global::System.Diagnostics.ProcessStartInfo(ollamaApp) { UseShellExecute = true });
+                }
+                catch
+                {
+                    // Ollama может быть не установлена
+                }
+            }
+        });
+
             StartFall();
             CreateTray();
             AnimateEntrance();
@@ -861,6 +893,7 @@ public partial class MainWindow : Window
         if (kind == "tts_start")
         {
             _talking = true;
+            _talkingStarted = DateTime.Now;
             PlayScene("VideoTalk");
             StatusText.Text = "говорит…";
         }
