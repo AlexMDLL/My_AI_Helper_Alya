@@ -45,6 +45,9 @@ public partial class MainWindow : Window
     private DispatcherTimer? _gestureTimer;
     private DispatcherTimer? _fallTimer;
     private bool _dragging;
+    private bool _dragMoved;
+    private DateTime _lastActivity = DateTime.Now;
+    private DispatcherTimer? _hideTimer;
     private Point _dragOffset;
     private double _fallY;
     private double _fallVelocity;
@@ -111,6 +114,23 @@ public partial class MainWindow : Window
         ApplyCharacterLayout();
         Opacity = Math.Clamp(_settings.Opacity, 0.6, 1);
         MessagesList.ItemsSource = _messages;
+        _hideTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        _hideTimer.Tick += (_, _) =>
+        {
+            var fresh = AlyaSettings.Load();
+            if (Math.Abs(fresh.PersonaScale - _settings.PersonaScale) > 0.001 || fresh.PersonaOffset != _settings.PersonaOffset)
+            {
+                _settings.PersonaScale = fresh.PersonaScale;
+                _settings.PersonaOffset = fresh.PersonaOffset;
+                ApplyCharacterLayout();
+            }
+            if (!ChatPanel.IsVisible) return;
+            if (fresh.ChatAutoHideSeconds <= 0) return;
+            if ((DateTime.Now - _lastActivity).TotalSeconds < fresh.ChatAutoHideSeconds) return;
+            ChatPanel.IsVisible = false;
+        };
+        _hideTimer.Start();
+
         ChatPanel.RenderTransform = _panelOffset;
         try
         {
@@ -175,6 +195,7 @@ public partial class MainWindow : Window
             if (!point.Properties.IsLeftButtonPressed) return;
             if (_lockDrag || _touchMode == "pet") return;
             _dragging = true;
+            _dragMoved = false;
             var screen = ScreenPoint(args.GetPosition(CharacterImage));
             _dragOffset = new Point(screen.X - Position.X, screen.Y - Position.Y);
             args.Pointer.Capture(CharacterImage);
@@ -202,6 +223,7 @@ public partial class MainWindow : Window
                 return;
             }
             if (!_dragging) return;
+            _dragMoved = true;
             var screen = ScreenPoint(args.GetPosition(CharacterImage));
             Position = new PixelPoint(
                 (int)Math.Round(screen.X - _dragOffset.X),
@@ -212,7 +234,8 @@ public partial class MainWindow : Window
         {
             if (!_dragging) return;
             _dragging = false;
-            StartFall();
+            if (!_dragMoved) ChatPanel.IsVisible = !ChatPanel.IsVisible;
+            else StartFall();
         };
 
 
@@ -800,9 +823,25 @@ public partial class MainWindow : Window
         else StatusText.Text = "на связи";
     }
 
+    private void ShowBubble(string text)
+    {
+        SpeechText.Text = text;
+        SpeechBubble.IsVisible = true;
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(6) };
+        timer.Tick += (_, _) =>
+        {
+            timer.Stop();
+            SpeechBubble.IsVisible = false;
+        };
+        timer.Start();
+    }
+
     private void Add(string role, string text)
     {
         var isUser = role == "user";
+        _lastActivity = DateTime.Now;
+        ChatPanel.IsVisible = true;
+        if (!isUser && _settings.Bubbles && text.Length < 160) ShowBubble(text);
         var bubble = new Bubble
         {
             Text = text,
