@@ -15,6 +15,7 @@ public sealed class OllamaLlmClient : ILlmClient, IDisposable
     private readonly string _systemPrompt;
     public string ExtraContext { get; set; } = string.Empty;
     public double Temperature { get; set; } = 0.8;
+    public string KeepAlive { get; set; } = "10m";
     public string Persona { get; set; } = string.Empty;
 
     public OllamaLlmClient(string model = "qwen2.5:7b-instruct", string baseUrl = "http://127.0.0.1:11434", string? systemPrompt = null)
@@ -51,7 +52,8 @@ public sealed class OllamaLlmClient : ILlmClient, IDisposable
             model = _model,
             stream = true,
             messages,
-            options = new { temperature = Temperature, num_predict = 220 }
+            options = new { temperature = Temperature, num_predict = 220 },
+            keep_alive = KeepAlive
         };
         using var requestMessage = new HttpRequestMessage(HttpMethod.Post, "/api/chat")
         {
@@ -102,7 +104,8 @@ public sealed class OllamaLlmClient : ILlmClient, IDisposable
             model = _model,
             stream = false,
             messages,
-            options = new { temperature = Temperature, num_predict = 220 }
+            options = new { temperature = Temperature, num_predict = 220 },
+            keep_alive = KeepAlive
         };
 
         using var response = await _http.PostAsJsonAsync("/api/chat", request, cancellationToken);

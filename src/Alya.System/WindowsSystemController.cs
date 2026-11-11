@@ -21,6 +21,9 @@ public sealed class WindowsSystemController : Alya.Core.ISystemController
     private static extern bool SetForegroundWindow(IntPtr handle);
 
     [DllImport("user32.dll")]
+    private static extern bool SetWindowPos(IntPtr handle, IntPtr insertAfter, int x, int y, int cx, int cy, uint flags);
+
+    [DllImport("user32.dll")]
     private static extern void keybd_event(byte key, byte scan, uint flags, UIntPtr extra);
 
     private delegate bool EnumProc(IntPtr handle, IntPtr param);
@@ -66,19 +69,40 @@ public sealed class WindowsSystemController : Alya.Core.ISystemController
     public bool Activate(string query)
     {
         var found = IntPtr.Zero;
-        EnumWindows((handle, _) =>
+        try
         {
-            if (!IsWindowVisible(handle)) return true;
-            var builder = new global::System.Text.StringBuilder(512);
-            GetWindowText(handle, builder, builder.Capacity);
-            var title = builder.ToString();
-            if (title.Length == 0) return true;
-            if (!title.Contains(query, StringComparison.OrdinalIgnoreCase)) return true;
-            found = handle;
-            return false;
-        }, IntPtr.Zero);
+            var process = Process.GetProcesses()
+                .Where(candidate =>
+                {
+                    try { return candidate.MainWindowHandle != IntPtr.Zero && candidate.ProcessName.Contains(query, StringComparison.OrdinalIgnoreCase); }
+                    catch { return false; }
+                })
+                .FirstOrDefault();
+            if (process is not null) found = process.MainWindowHandle;
+        }
+        catch
+        {
+            // поиск по процессам не удался
+        }
+        if (found == IntPtr.Zero)
+        {
+            EnumWindows((handle, _) =>
+            {
+                if (!IsWindowVisible(handle)) return true;
+                var builder = new global::System.Text.StringBuilder(512);
+                GetWindowText(handle, builder, builder.Capacity);
+                var title = builder.ToString();
+                if (title.Length == 0) return true;
+                if (!title.Contains(query, StringComparison.OrdinalIgnoreCase)) return true;
+                found = handle;
+                return false;
+            }, IntPtr.Zero);
+        }
         if (found == IntPtr.Zero) return false;
         ShowWindow(found, SwRestore);
+        const uint SwpNoSize = 0x0001, SwpNoMove = 0x0002, SwpNoActivate = 0x0010, SwpShowWindow = 0x0040;
+        SetWindowPos(found, new IntPtr(-1), 0, 0, 0, 0, SwpNoSize | SwpNoMove | SwpNoActivate);
+        SetWindowPos(found, new IntPtr(-2), 0, 0, 0, 0, SwpNoSize | SwpNoMove | SwpNoActivate | SwpShowWindow);
         SetForegroundWindow(found);
         return true;
     }
