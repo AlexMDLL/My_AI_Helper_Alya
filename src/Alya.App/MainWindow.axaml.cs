@@ -26,7 +26,7 @@ public partial class MainWindow : Window
     private readonly TcpSileroTtsService _silero = new();
     private readonly SapiTtsService _sapi = new();
     private readonly PiperTtsService _piper = new();
-    private ITtsService _tts => _piper.Available ? _piper : _silero.Available ? _silero : _sapi;
+    private ITtsService _tts => _silero.Available ? _silero : _piper.Available ? _piper : _sapi;
     private OllamaLlmClient _llm = new();
     private AlyaSettings _settings = new();
     private readonly List<ChatMessage> _history = new();
@@ -127,6 +127,7 @@ public partial class MainWindow : Window
             }
         };
         CloseButton.Click += (_, _) => Hide();
+        SettingsButton.Click += (_, _) => OpenSettings();
         CharacterImage.PointerPressed += (_, args) =>
         {
             var point = args.GetCurrentPoint(CharacterImage);
@@ -178,7 +179,7 @@ public partial class MainWindow : Window
         {
             var screen = Screens.Primary?.WorkingArea ?? new PixelRect(0, 0, 1920, 1080);
             Position = new PixelPoint(screen.X + screen.Width - 800, screen.Y + 60);
-            StatusText.Text = $"голос: {(_piper.Available ? "Piper" : _silero.Available ? "Silero" : "Windows")}";
+            StatusText.Text = $"голос: {(_silero.Available ? "Silero" : _piper.Available ? "Piper" : "Windows")}";
             LoadCharacter();
             CreateTray();
             AnimateEntrance();

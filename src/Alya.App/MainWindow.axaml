@@ -58,7 +58,8 @@
               <TextBlock Text="АЛЯ" FontSize="14" FontWeight="SemiBold" Foreground="#EAF4FF" LetterSpacing="2"/>
               <TextBlock x:Name="StatusText" Text="на связи" FontSize="11" Foreground="#8EA4BD"/>
             </StackPanel>
-            <Button Grid.Column="2" x:Name="CloseButton" Content="✕" Background="Transparent"
+            <Button Grid.Column="2" x:Name="SettingsButton" Content="⚙" Background="Transparent" Foreground="#8EA4BD" BorderThickness="0" Padding="8,2" VerticalAlignment="Top" Margin="0,0,4,0"/>
+            <Button Grid.Column="3" x:Name="CloseButton" Content="✕" Background="Transparent"
                     Foreground="#8EA4BD" BorderThickness="0" Padding="8,2" VerticalAlignment="Top"/>
           </Grid>
         </Border>
