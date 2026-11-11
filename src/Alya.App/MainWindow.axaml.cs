@@ -616,8 +616,8 @@ public partial class MainWindow : Window
         var aliases = new (string Key, string Value)[]
         {
             ("стим", "steam"), ("steam", "steam"), ("стиме", "steam"), ("стиму", "steam"),
-            ("фортнайт", "fortnite"), ("фортнай", "fortnite"), ("fortnite", "fortnite"),
-            ("эпик", "epic"), ("epic", "epic"), ("епки", "epic"),
+            ("фортнайт", "fortnite"), ("фортнай", "fortnite"), ("fortnite", "fortnite"), ("форт", "fortnite"), ("фoрт", "fortnite"),
+            ("эпик", "epic"), ("epic", "epic"), ("епки", "epic"), ("эпик геймс", "epic"), ("epic games", "epic"),
             ("хром", "chrome"), ("chrome", "chrome"), ("браузер", "chrome"),
             ("телега", "telegram"), ("телеграм", "telegram"), ("телеге", "telegram"),
             ("дискорд", "discord"), ("discord", "discord"),
