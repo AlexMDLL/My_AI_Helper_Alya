@@ -99,7 +99,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         _settings = AlyaSettings.Load();
-        _llm = new OllamaLlmClient(_settings.Model);
+        _llm = new OllamaLlmClient(_settings.Model) { Temperature = _settings.Temperature };
         _silero.Speaker = _settings.Speaker;
         _silero.Pitch = _settings.Pitch;
         _piper.Pitch = _settings.Pitch;
@@ -477,6 +477,7 @@ public partial class MainWindow : Window
 
     private void DetectLaunches()
     {
+        if (!_settings.Care) return;
         if (_talking) return;
         var running = _system.RunningProcesses();
         var interesting = new HashSet<string>(
@@ -688,7 +689,7 @@ public partial class MainWindow : Window
         _piper.Pitch = _settings.Pitch;
         if (!string.Equals(previousModel, _settings.Model, StringComparison.OrdinalIgnoreCase))
         {
-            _llm = new OllamaLlmClient(_settings.Model);
+            _llm = new OllamaLlmClient(_settings.Model) { Temperature = _settings.Temperature };
         }
         if (_animTimer is not null)
         {

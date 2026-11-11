@@ -20,6 +20,9 @@ public partial class SettingsWindow : Window
         FpsBox.Value = _settings.Fps;
         PitchSlider.Value = _settings.Pitch;
         AutostartBox.IsChecked = _settings.Autostart;
+        BubblesBox.IsChecked = _settings.Bubbles;
+        CareBox.IsChecked = _settings.Care;
+        TemperatureBox.Value = (decimal)Math.Clamp(_settings.Temperature, 0.5, 1.2);
         SpeakerBox.SelectedIndex = Math.Max(0, _settings.Speaker switch
         {
             "baya" => 1,
@@ -234,6 +237,9 @@ public partial class SettingsWindow : Window
             _ => "xenia"
         };
         _settings.Autostart = AutostartBox.IsChecked == true;
+        _settings.Bubbles = BubblesBox.IsChecked == true;
+        _settings.Care = CareBox.IsChecked == true;
+        _settings.Temperature = Math.Round((double)(TemperatureBox.Value ?? 0.8m), 2);
         _settings.Opacity = Math.Clamp(OpacitySlider.Value, 0.6, 1);
         _settings.Accent = _accent;
         _settings.Save();

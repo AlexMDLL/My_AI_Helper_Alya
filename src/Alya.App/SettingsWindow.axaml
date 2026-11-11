@@ -127,6 +127,8 @@
           <StackPanel x:Name="PanelGeneral" Spacing="4">
             <TextBlock Text="Модель Ollama" Classes="label"/>
             <TextBox x:Name="ModelBox" Watermark="qwen2.5:7b-instruct"/>
+            <TextBlock Text="Температура модели (0.5–1.2)" Classes="label"/>
+            <NumericUpDown x:Name="TemperatureBox" Minimum="0.5" Maximum="1.2" Increment="0.05"/>
             <TextBlock Text="Сервер Ollama: 127.0.0.1:11434" Classes="hint" Margin="0,6,0,0"/>
           </StackPanel>
 
@@ -147,6 +149,8 @@
             <NumericUpDown x:Name="AutoHideBox" Minimum="5" Maximum="300" Increment="5"/>
             <CheckBox x:Name="TtsEnabled" Content="Озвучивать ответы" IsChecked="True" Margin="0,8,0,0"/>
             <CheckBox x:Name="AutostartBox" Content="Запускать вместе с Windows" Margin="0,4,0,0"/>
+            <CheckBox x:Name="BubblesBox" Content="Пузыри над персонажем" Margin="0,4,0,0"/>
+            <CheckBox x:Name="CareBox" Content="Забота: реакции на игры и работу" Margin="0,4,0,0"/>
           </StackPanel>
 
           <StackPanel x:Name="PanelVoice" Spacing="4" IsVisible="False">

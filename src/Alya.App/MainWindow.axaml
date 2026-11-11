@@ -33,7 +33,6 @@
             RenderTransformOrigin="0,0"
             BorderBrush="#33A7D8FF"
             BorderThickness="1"
-            BoxShadow="0 26 70 0 #B3000000"
             Margin="10"
             Opacity="1">
       <Border.Background>
