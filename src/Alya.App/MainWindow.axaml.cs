@@ -460,6 +460,7 @@ public partial class MainWindow : Window
             LoadCharacter();
             _voiceDotUpdate();
             _voiceInput.TextRecognized += OnVoiceText;
+            StartCare();
             if (!_settings.PushToTalk) _voiceInput.Start();
         global::System.Threading.Tasks.Task.Run(async () =>
         {
@@ -1436,7 +1437,7 @@ public partial class MainWindow : Window
     }
     private string BuildContext()
     {
-        var profile = $"Пользователя зовут {_settings.UserName}, его город — {_settings.City}.";
+        var profile = $"Пользователя зовут {_settings.UserName}, его город — {_settings.City}. Сейчас {DateTime.Now:dddd, d MMMM, HH:mm}.";
         var memory = _memory.ToPrompt();
         return string.IsNullOrWhiteSpace(memory) ? profile : profile + " " + memory;
     }
@@ -1531,7 +1532,7 @@ public partial class MainWindow : Window
         Bubble? streamedBubble = null;
         try
         {
-            var quick = TryMemoryCommand(text) ?? TryTimerCommand(text) ?? TryPowerCommand(text) ?? TryHistoryCommand(text) ?? TryMediaCommand(text) ?? TryWindowCommand(text) ?? TryCloseApp(text) ?? TryOpenApp(text) ?? TryLaunchGame(text);
+            var quick = HandleCareAnswer(text) ?? TryMemoryCommand(text) ?? TryTimerCommand(text) ?? TryPowerCommand(text) ?? TryHistoryCommand(text) ?? TryMediaCommand(text) ?? TryWindowCommand(text) ?? TryCloseApp(text) ?? TryOpenApp(text) ?? TryLaunchGame(text);
             if (quick is null) quick = await TryWeatherAsync(text);
             if (quick is not null)
             {
