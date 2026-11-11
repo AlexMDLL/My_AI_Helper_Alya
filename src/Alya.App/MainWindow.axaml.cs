@@ -24,6 +24,7 @@ public partial class MainWindow : Window
 {
     private readonly WindowsSystemController _system = new();
     private readonly SteamLibrary _steam = new();
+    private readonly WeatherService _weather = new();
     private readonly MemoryStore _memory = MemoryStore.Load();
     private readonly TcpSileroTtsService _silero = new();
     private readonly SapiTtsService _sapi = new();
@@ -663,6 +664,28 @@ public partial class MainWindow : Window
         var ok = _system.Launch(resolved);
         return ok ? $"Открываю {target}." : $"Не нашла {target}.";
     }
+    private async Task<string?> TryWeatherAsync(string text)
+    {
+        var lower = text.ToLowerInvariant();
+        if (!lower.Contains("погод") && !lower.Contains("температур") && !lower.Contains("градус")) return null;
+        if (lower.Contains("на улице") && (lower.Contains("снег") || lower.Contains("дождь") || lower.Contains("солнце")))
+        {
+            return null;
+        }
+        var city = _settings.City;
+        var match = Regex.Match(text, @"(?:в|во)\s+([А-ЯЁа-яё\-]+)");
+        if (match.Success && match.Groups[1].Value.Length > 1)
+        {
+            city = match.Groups[1].Value;
+        }
+        var weather = await _weather.GetAsync(city);
+        if (weather is null && !string.Equals(city, _settings.City, StringComparison.OrdinalIgnoreCase))
+        {
+            weather = await _weather.GetAsync(_settings.City);
+            city = _settings.City;
+        }
+        return weather ?? $"Не получилось узнать погоду в {city}. Проверь интернет.";
+    }
     private string? TryCloseApp(string text)
     {
         var match = Regex.Match(text.Trim(), @"(закрой|закрыть|выключи|заверши|убей)\s+(.+)$", RegexOptions.IgnoreCase);
@@ -1126,7 +1149,7 @@ public partial class MainWindow : Window
         string reply;
         try
         {
-            reply = TryMemoryCommand(text) ?? TryCloseApp(text) ?? TryOpenApp(text) ?? TryLaunchGame(text) ?? await _llm.CompleteAsync(_history);
+            reply = TryMemoryCommand(text) ?? TryCloseApp(text) ?? TryOpenApp(text) ?? TryLaunchGame(text) ?? await TryWeatherAsync(text) ?? await _llm.CompleteAsync(_history);
         }
         catch (Exception error)
         {
