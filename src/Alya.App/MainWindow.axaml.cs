@@ -967,6 +967,36 @@ public partial class MainWindow : Window
             ? "Перезагрузить компьютер? Скажи «подтверждаю» в течение 45 секунд."
             : "Выключить компьютер? Скажи «подтверждаю» в течение 45 секунд.";
     }
+    private string? TryHistoryCommand(string text)
+    {
+        var lower = text.ToLowerInvariant();
+        if (lower.Contains("экспорт") && (lower.Contains("истори") || lower.Contains("диалог")))
+        {
+            try
+            {
+                var messages = HistoryStore.Load();
+                var path = global::System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), $"alya-history-{DateTime.Now:yyyyMMdd-HHmm}.txt");
+                var lines = messages.Select(message => $"[{message.At:HH:mm}] {(message.Role == "user" ? "Ты" : "Аля")}: {message.Content}");
+                global::System.IO.File.WriteAllLines(path, lines);
+                return $"Экспортировала историю в {path}";
+            }
+            catch (Exception error)
+            {
+                return $"Не получилось экспортировать: {error.Message}";
+            }
+        }
+        if (lower.Contains("интернет") || lower.Contains("гугл")) return null;
+        var match = Regex.Match(text, @"(?:найди|поищи|ищи)\s+(?:в\s+истории\s+)?(.+)$", RegexOptions.IgnoreCase);
+        if (!match.Success) return null;
+        var query = match.Groups[1].Value.Trim().Trim('.', '!', '?', ',');
+        if (query.Length < 2) return null;
+        var found = HistoryStore.Load()
+            .Where(message => message.Content.Contains(query, StringComparison.OrdinalIgnoreCase))
+            .TakeLast(6)
+            .ToList();
+        if (found.Count == 0) return $"В истории не нашла «{query}».";
+        return "Нашла в истории: " + string.Join(" | ", found.Select(message => $"{message.At:HH:mm} {(message.Role == "user" ? "ты" : "Аля")}: {message.Content}"));
+    }
     private string? TryMediaCommand(string text)
     {
         var lower = text.ToLowerInvariant();
@@ -1497,7 +1527,7 @@ public partial class MainWindow : Window
         Bubble? streamedBubble = null;
         try
         {
-            var quick = TryMemoryCommand(text) ?? TryTimerCommand(text) ?? TryPowerCommand(text) ?? TryMediaCommand(text) ?? TryWindowCommand(text) ?? TryCloseApp(text) ?? TryOpenApp(text) ?? TryLaunchGame(text);
+            var quick = TryMemoryCommand(text) ?? TryTimerCommand(text) ?? TryPowerCommand(text) ?? TryHistoryCommand(text) ?? TryMediaCommand(text) ?? TryWindowCommand(text) ?? TryCloseApp(text) ?? TryOpenApp(text) ?? TryLaunchGame(text);
             if (quick is null) quick = await TryWeatherAsync(text);
             if (quick is not null)
             {
