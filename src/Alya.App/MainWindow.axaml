@@ -12,34 +12,51 @@
         WindowStartupLocation="Manual">
   <Grid ColumnDefinitions="380,*">
 
-    <Border Grid.Column="0" CornerRadius="18"
-            Background="#FF0D1522"
-            BorderBrush="#2B3F5A"
+    <Border Grid.Column="0" x:Name="ChatPanel" CornerRadius="20"
+            BorderBrush="#33A7D8FF"
             BorderThickness="1"
-            BoxShadow="0 24 60 0 #99000000"
-            Margin="10">
+            BoxShadow="0 26 70 0 #B3000000"
+            Margin="10"
+            Opacity="1">
+      <Border.Background>
+        <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+          <GradientStop Offset="0" Color="#FF142233"/>
+          <GradientStop Offset="1" Color="#FF0A1018"/>
+        </LinearGradientBrush>
+      </Border.Background>
       <Grid RowDefinitions="Auto,*,Auto">
-        <Border Grid.Row="0" Padding="16,12" Background="#331B2C42" CornerRadius="18,18,0,0">
+        <Border Grid.Row="0" Padding="14,12" CornerRadius="20,20,0,0" Background="#331E3348">
           <Grid ColumnDefinitions="Auto,*,Auto">
-            <Ellipse Width="10" Height="10" Fill="#5EEAD4" VerticalAlignment="Center" Margin="0,0,10,0"/>
-            <StackPanel Grid.Column="1">
-              <TextBlock Text="АЛЯ" FontSize="14" FontWeight="SemiBold" Foreground="#E8F1FB" LetterSpacing="2"/>
+            <Border Width="34" Height="34" CornerRadius="17" Margin="0,0,10,0">
+              <Border.Background>
+                <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                  <GradientStop Offset="0" Color="#5EEAD4"/>
+                  <GradientStop Offset="1" Color="#38BDF8"/>
+                </LinearGradientBrush>
+              </Border.Background>
+              <TextBlock Text="А" FontSize="16" FontWeight="Bold" Foreground="#06232B"
+                         HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+              <TextBlock Text="АЛЯ" FontSize="14" FontWeight="SemiBold" Foreground="#EAF4FF" LetterSpacing="2"/>
               <TextBlock x:Name="StatusText" Text="на связи" FontSize="11" Foreground="#8EA4BD"/>
             </StackPanel>
-            <Button Grid.Column="2" x:Name="CloseButton" Content="✕" Background="Transparent" Foreground="#8EA4BD" BorderThickness="0" Padding="8,2"/>
+            <Button Grid.Column="2" x:Name="CloseButton" Content="✕" Background="Transparent"
+                    Foreground="#8EA4BD" BorderThickness="0" Padding="8,2" VerticalAlignment="Top"/>
           </Grid>
         </Border>
 
-        <ScrollViewer Grid.Row="1" Margin="14,10" VerticalScrollBarVisibility="Auto">
+        <ScrollViewer Grid.Row="1" Margin="12,10" VerticalScrollBarVisibility="Auto">
           <ItemsControl x:Name="MessagesList">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="local:Bubble">
-                <Border CornerRadius="14" Padding="10,8" Margin="0,4" MaxWidth="330"
+                <Border CornerRadius="16" Padding="11,8" Margin="0,4" MaxWidth="320"
                         HorizontalAlignment="{Binding Alignment}"
-                        Background="{Binding Background}">
+                        Background="{Binding Background}"
+                        BoxShadow="0 6 18 0 #44000000">
                   <StackPanel>
-                    <TextBlock Text="{Binding Text}" TextWrapping="Wrap" FontSize="13" Foreground="#E6EDF5"/>
-                    <TextBlock Text="{Binding Time}" FontSize="10" Foreground="#7F93AA" HorizontalAlignment="Right" Margin="0,4,0,0"/>
+                    <TextBlock Text="{Binding Text}" TextWrapping="Wrap" FontSize="13" Foreground="#EAF1FA" LineHeight="19"/>
+                    <TextBlock Text="{Binding Time}" FontSize="10" Foreground="#7F93AA" HorizontalAlignment="Right" Margin="0,3,0,0"/>
                   </StackPanel>
                 </Border>
               </DataTemplate>
@@ -47,16 +64,21 @@
           </ItemsControl>
         </ScrollViewer>
 
-        <Border Grid.Row="2" Margin="12" Padding="8" CornerRadius="14" Background="#66192A40" BorderBrush="#2B3F5A" BorderThickness="1">
+        <Border Grid.Row="2" Margin="12" Padding="8" CornerRadius="16"
+                Background="#66162638" BorderBrush="#334A6B8C" BorderThickness="1">
           <Grid ColumnDefinitions="*,Auto">
-            <TextBox x:Name="InputBox" Watermark="Сообщение…" Background="Transparent" BorderThickness="0" FontSize="13" VerticalContentAlignment="Center"/>
-            <Button Grid.Column="1" x:Name="SendButton" Content="→" Width="38" Height="34" CornerRadius="12"
-                    Background="#38BDF8" Foreground="#06232B" FontWeight="Bold"/>
+            <TextBox x:Name="InputBox" Watermark="Сообщение…" Background="Transparent" BorderThickness="0"
+                     FontSize="13" VerticalContentAlignment="Center" Padding="6,0"/>
+            <Button Grid.Column="1" x:Name="SendButton" Content="→" Width="40" Height="36" CornerRadius="13"
+                    Background="#38BDF8" Foreground="#06232B" FontWeight="Bold" FontSize="16"/>
           </Grid>
         </Border>
       </Grid>
     </Border>
 
-    <Image Grid.Column="1" x:Name="CharacterImage" Stretch="Uniform" Margin="0,10,10,10"/>
+    <Grid Grid.Column="1">
+      <Image x:Name="CharacterImage" Stretch="Uniform" Margin="0,10,10,10" RenderOptions.BitmapInterpolationMode="HighQuality"/>
+      <Image x:Name="CharacterFade" Stretch="Uniform" Margin="0,10,10,10" Opacity="0" IsHitTestVisible="False" RenderOptions.BitmapInterpolationMode="HighQuality"/>
+    </Grid>
   </Grid>
 </Window>

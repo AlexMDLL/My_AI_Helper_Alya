@@ -2,10 +2,13 @@ using System.Collections.ObjectModel;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Avalonia;
+using Avalonia.Animation;
+using Avalonia.Animation.Easings;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using Avalonia.Styling;
 using Avalonia.Platform;
 using Avalonia.Threading;
 using Alya.Core;
@@ -163,6 +166,7 @@ public partial class MainWindow : Window
             StatusText.Text = $"голос: {(_tts.Available ? "Silero" : "нет")}";
             LoadCharacter();
             CreateTray();
+            ChatPanel.Opacity = 1;
             _hwnd = TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
             _clickTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(60) };
             _clickTimer.Tick += (_, _) => UpdateClickThrough();
@@ -278,7 +282,7 @@ public partial class MainWindow : Window
         _frames = frames;
         _frame = 0;
         _oneShotLeft = oneShot ? frames.Length : 0;
-        ShowFrame(0);
+        _ = CrossfadeFrame(0);
     }
 
     private void Tick()
@@ -466,6 +470,78 @@ public partial class MainWindow : Window
             _talking = false;
             PlayScene("VideoStand");
         }
+    }
+    private void AnimateEntrance()
+    {
+        ChatPanel.Opacity = 0;
+        ChatPanel.RenderTransform = new TranslateTransform(0, 18);
+        var animation = new Animation
+        {
+            Duration = TimeSpan.FromMilliseconds(320),
+            Easing = new CubicEaseOut(),
+            Children =
+            {
+                new KeyFrame
+                {
+                    Cue = new Cue(0),
+                    Setters =
+                    {
+                        new Setter(OpacityProperty, 0d),
+                        new Setter(TranslateTransform.YProperty, 18d)
+                    }
+                },
+                new KeyFrame
+                {
+                    Cue = new Cue(1),
+                    Setters =
+                    {
+                        new Setter(OpacityProperty, 1d),
+                        new Setter(TranslateTransform.YProperty, 0d)
+                    }
+                }
+            }
+        };
+        _ = animation.RunAsync(ChatPanel);
+    }
+
+    private async Task CrossfadeFrame(int frameIndex)
+    {
+        if (_frames.Length == 0) return;
+        var path = _frames[frameIndex];
+        Avalonia.Media.Imaging.Bitmap bitmap;
+        lock (_cacheLock)
+        {
+            if (!_cache.TryGetValue(path, out var cached) || cached is null)
+            {
+                try
+                {
+                    cached = new Avalonia.Media.Imaging.Bitmap(path);
+                }
+                catch
+                {
+                    return;
+                }
+                _cache[path] = cached;
+            }
+            bitmap = cached;
+        }
+
+        CharacterFade.Source = bitmap;
+        CharacterFade.Opacity = 0;
+        var fade = new Animation
+        {
+            Duration = TimeSpan.FromMilliseconds(220),
+            Easing = new CubicEaseOut(),
+            Children =
+            {
+                new KeyFrame { Cue = new Cue(0), Setters = { new Setter(OpacityProperty, 0d) } },
+                new KeyFrame { Cue = new Cue(1), Setters = { new Setter(OpacityProperty, 1d) } }
+            }
+        };
+        await fade.RunAsync(CharacterFade);
+        CharacterImage.Source = bitmap;
+        CharacterFade.Opacity = 0;
+        CharacterFade.Source = null;
     }
     private void UpdateClickThrough()
     {
