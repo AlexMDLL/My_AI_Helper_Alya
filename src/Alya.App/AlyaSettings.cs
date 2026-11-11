@@ -19,7 +19,7 @@ public sealed class AlyaSettings
     public bool FallEnabled { get; set; } = true;
     public bool PetEnabled { get; set; } = true;
     public bool AlwaysListen { get; set; } = true;
-    public bool Fullscreen { get; set; } = true;
+    public bool Fullscreen { get; set; } = false;
     public double Temperature { get; set; } = 0.8;
     public double Opacity { get; set; } = 1.0;
     public string Accent { get; set; } = "#38BDF8";
