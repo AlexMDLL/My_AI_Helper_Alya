@@ -221,7 +221,9 @@ public sealed class MemoryGraph : Control
             var center = ToScreen(node.X, node.Y);
             var isHot = ReferenceEquals(node, _selected) || ReferenceEquals(node, _hover);
             var pulse = 1 + (isHot ? 0.10 : 0.035) * Math.Sin(_time * 2.2 + node.X * 0.05);
-            var baseRadius = ReferenceEquals(node, _selected) ? 21 : ReferenceEquals(node, _hover) ? 17 : 13;
+            var selectedActive = ReferenceEquals(node, _selected) && _zoom > 1.15
+                && Math.Abs(center.X - Bounds.Width / 2) < 110 && Math.Abs(center.Y - Bounds.Height / 2) < 110;
+            var baseRadius = selectedActive ? 21 : ReferenceEquals(node, _hover) ? 17 : 13;
             var radius = baseRadius * _zoom * (0.6 + 0.4 * _appear) * pulse;
             var color = node.Kind switch
             {
@@ -233,7 +235,7 @@ public sealed class MemoryGraph : Control
             var glow = new SolidColorBrush(Color.Parse(color)) { Opacity = (isHot ? 0.38 : 0.20) * _appear };
             context.DrawEllipse(glow, null, center, radius * (isHot ? 2.1 : 1.7), radius * (isHot ? 2.1 : 1.7));
             var brush = new SolidColorBrush(Color.Parse(color)) { Opacity = _appear };
-            var pen = ReferenceEquals(node, _selected) ? new Pen(Brushes.White, 2) : null;
+            var pen = selectedActive ? new Pen(Brushes.White, 2) : null;
             context.DrawEllipse(brush, pen, center, radius, radius);
 
             var shortLabel = node.Label.Length > 26 ? node.Label[..26] + "…" : node.Label;
