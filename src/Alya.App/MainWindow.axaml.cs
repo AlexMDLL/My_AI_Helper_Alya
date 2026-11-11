@@ -627,12 +627,14 @@ public partial class MainWindow : Window
             var cleanedText = text.Replace("[музыка]", string.Empty).Replace("[шум]", string.Empty).Replace("[аплодисменты]", string.Empty).Trim();
             if (cleanedText.Length < 2 || cleanedText.StartsWith("[")) return;
             text = cleanedText;
-            var hallu = new[] { "субтитры", "смотрите видео", "продолжение следует", "спасибо за просмотр", "подписывайтесь на канал" };
+            var trimmed = text.Trim();
+            if ((trimmed.StartsWith("[") && trimmed.EndsWith("]")) || (trimmed.StartsWith("*") && trimmed.EndsWith("*"))) return;
+            var hallu = new[] { "субтитры", "смотрите видео", "продолжение следует", "спасибо за просмотр", "подписывайтесь на канал", "музыка" };
             if (hallu.Any(text.Contains)) return;
             var lower = text.ToLowerInvariant();
-            var hasWake = lower.Contains("аля") || lower.Contains("алла") || lower.Contains("алю") || lower.Contains("але") || lower.Contains("ало") || lower.Contains("оля") || lower.Contains("алекс");
+            var hasWake = lower.Contains("алл") || lower.Contains("аля") || lower.Contains("алю") || lower.Contains("але") || lower.Contains("ало") || lower.Contains("оля") || lower.Contains("алекс") || lower.Contains("али");
             if (!_settings.AlwaysListen && !hasWake) return;
-            var cleaned = Regex.Replace(text, @"(?i)\b(аля|алла|алю|але|ало|оля)\b[\s,!\.\?]*", " ").Trim();
+            var cleaned = Regex.Replace(text, @"(?i)\b(аля|алла|алле|алло|алли|алю|але|ало|оля|али)\b[\s,!\.\?]*", " ").Trim();
             if (cleaned.Length < 2) return;
             InputBox.Text = cleaned;
             Send();
