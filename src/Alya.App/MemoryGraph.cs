@@ -68,6 +68,12 @@ public sealed class MemoryGraph : Control
         // связи: всё связано с пользователем, плюс по ключевым темам
         var user = _nodes.FirstOrDefault(n => n.Kind == "user");
         var city = _nodes.FirstOrDefault(n => n.Kind == "city");
+        if (user is not null && city is not null && _edges.All(edge => !(edge.A == user.Id && edge.B == city.Id)))
+        {
+            _edges.Add((user.Id, city.Id));
+            user.Links.Add(city.Id);
+            city.Links.Add(user.Id);
+        }
         foreach (var node in _nodes)
         {
             if (node == user) continue;
@@ -85,6 +91,13 @@ public sealed class MemoryGraph : Control
             }
         }
         Layout();
+        if (city is not null)
+        {
+            var centerX = _nodes.Average(n => n.X);
+            var centerY = _nodes.Average(n => n.Y);
+            city.X = centerX + (city.X - centerX) * 0.45;
+            city.Y = centerY + (city.Y - centerY) * 0.45;
+        }
         _centroid = new Point(_nodes.Average(n => n.X), _nodes.Average(n => n.Y));
         _centered = false;
         _appear = 0;
