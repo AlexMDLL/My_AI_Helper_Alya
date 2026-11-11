@@ -56,6 +56,8 @@ public partial class MainWindow : Window
     private DispatcherTimer? _pttTimer;
     private bool _pttDown;
     private DispatcherTimer? _pttResetTimer;
+    private readonly List<(DateTime Due, string Message)> _reminders = new();
+    private DispatcherTimer? _reminderTimer;
     private DateTime _lastActivity = DateTime.Now;
     private DispatcherTimer? _hideTimer;
     private DispatcherTimer? _bubbleTimer;
@@ -198,6 +200,9 @@ public partial class MainWindow : Window
             }
         };
         _pttTimer.Start();
+        _reminderTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        _reminderTimer.Tick += (_, _) => CheckReminders();
+        _reminderTimer.Start();
         _hideTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _hideTimer.Tick += (_, _) =>
         {
@@ -762,6 +767,48 @@ public partial class MainWindow : Window
         }
         return weather ?? $"Не получилось узнать погоду в {city}. Проверь интернет.";
     }
+    private string? TryTimerCommand(string text)
+    {
+        var lower = text.ToLowerInvariant();
+        if (lower.Contains("напоминани") && (lower.Contains("какие") || lower.Contains("список") || lower.Contains("что")))
+        {
+            if (_reminders.Count == 0) return "Напоминаний нет.";
+            return "Напоминания: " + string.Join("; ", _reminders.Select(item => $"{item.Message} в {item.Due:HH:mm}"));
+        }
+        if (lower.Contains("отмен") && lower.Contains("напомин"))
+        {
+            _reminders.Clear();
+            return "Убрала все напоминания.";
+        }
+        var match = Regex.Match(lower, @"через\s+(\d+)\s*(секунд|сек|минут|мин|час|часа|часов)");
+        var timerMatch = Regex.Match(lower, @"таймер\s+(?:на\s+)?(\d+)\s*(секунд|сек|минут|мин|час|часа|часов)");
+        var use = match.Success ? match : timerMatch;
+        if (!use.Success) return null;
+        var value = int.Parse(use.Groups[1].Value);
+        var unit = use.Groups[2].Value;
+        var seconds = unit.StartsWith("час") ? value * 3600 : unit.StartsWith("сек") ? value : value * 60;
+        if (seconds <= 0) return null;
+        var message = text;
+        var idx = text.IndexOf(use.Groups[0].Value, StringComparison.OrdinalIgnoreCase);
+        if (idx >= 0) message = text[(idx + use.Groups[0].Value.Length)..].Trim(' ', ',', '.', '!', '?', ':', '-');
+        if (string.IsNullOrWhiteSpace(message)) message = "напоминание";
+        var due = DateTime.Now.AddSeconds(seconds);
+        _reminders.Add((due, message));
+        return $"Хорошо, напомню в {due:HH:mm}: {message}.";
+    }
+
+    private void CheckReminders()
+    {
+        if (_reminders.Count == 0) return;
+        var due = _reminders.Where(item => item.Due <= DateTime.Now).ToList();
+        foreach (var item in due)
+        {
+            _reminders.Remove(item);
+            var text = $"Напоминаю: {item.Message}";
+            Add("alya", text);
+            _ = _tts.SpeakAsync(text, "neutral");
+        }
+    }
     private string? TryPowerCommand(string text)
     {
         var lower = text.ToLowerInvariant();
@@ -1272,7 +1319,7 @@ public partial class MainWindow : Window
         Bubble? streamedBubble = null;
         try
         {
-            var quick = TryMemoryCommand(text) ?? TryPowerCommand(text) ?? TryCloseApp(text) ?? TryOpenApp(text) ?? TryLaunchGame(text);
+            var quick = TryMemoryCommand(text) ?? TryTimerCommand(text) ?? TryPowerCommand(text) ?? TryCloseApp(text) ?? TryOpenApp(text) ?? TryLaunchGame(text);
             if (quick is null) quick = await TryWeatherAsync(text);
             if (quick is not null)
             {
