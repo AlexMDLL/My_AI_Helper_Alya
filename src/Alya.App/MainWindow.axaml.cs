@@ -37,6 +37,9 @@ public partial class MainWindow : Window
     private double _fallY;
     private double _fallVelocity;
     private int _fallX;
+    private string _touchMode = "drag";
+    private bool _lockDrag;
+    private DateTime _lastPetAt = DateTime.MinValue;
     private readonly ObservableCollection<Bubble> _messages = new();
     private TrayIcon? _tray;
 
@@ -59,6 +62,7 @@ public partial class MainWindow : Window
         {
             var point = args.GetCurrentPoint(CharacterImage);
             if (!point.Properties.IsLeftButtonPressed) return;
+            if (_lockDrag || _touchMode == "pet") return;
             _dragging = true;
             var screen = ScreenPoint(args.GetPosition(CharacterImage));
             _dragOffset = new Point(screen.X - Position.X, screen.Y - Position.Y);
@@ -72,6 +76,20 @@ public partial class MainWindow : Window
 
         CharacterImage.PointerMoved += (_, args) =>
         {
+            if (_touchMode == "pet" && args.GetCurrentPoint(CharacterImage).Properties.IsLeftButtonPressed)
+            {
+                if ((DateTime.Now - _lastPetAt).TotalSeconds < 4) return;
+                _lastPetAt = DateTime.Now;
+                var local = args.GetPosition(CharacterImage);
+                var zone = local.Y / Math.Max(1, CharacterImage.Bounds.Height) < 0.32 ? "head" : "body";
+                var phrases = zone == "head"
+                    ? new[] { "Мурр... ещё разок.", "Осторожно с ушами!", "Ты специально меня смущаешь?" }
+                    : new[] { "Куда руки распустил?", "Щекотно! Предупреждай хотя бы.", "Ну и наглость... но приятно." };
+                var phrase = phrases[Random.Shared.Next(phrases.Length)];
+                PlayScene("VideoShyJoy", oneShot: true);
+                _ = _tts.SpeakAsync(phrase, "shy");
+                return;
+            }
             if (!_dragging) return;
             var screen = ScreenPoint(args.GetPosition(CharacterImage));
             Position = new PixelPoint(
@@ -108,6 +126,47 @@ public partial class MainWindow : Window
         var menu = new NativeMenu();
         menu.Items.Add(new NativeMenuItem { Header = "Показать", Command = new SimpleCommand(ShowWindow) });
         menu.Items.Add(new NativeMenuItem { Header = "Скрыть", Command = new SimpleCommand(Hide) });
+
+        var dragItem = new NativeMenuItem
+        {
+            Header = _touchMode == "drag" ? "✓ Перетаскивание" : "Перетаскивание"
+        };
+        var petItem = new NativeMenuItem
+        {
+            Header = _touchMode == "pet" ? "✓ Поглаживания" : "Поглаживания"
+        };
+        var lockItem = new NativeMenuItem
+        {
+            Header = _lockDrag ? "✓ Блокировать перетаскивание" : "Блокировать перетаскивание"
+        };
+
+        dragItem.Click += (_, _) =>
+        {
+            _touchMode = "drag";
+            dragItem.Header = "✓ Перетаскивание";
+            petItem.Header = "Поглаживания";
+        };
+        petItem.Click += (_, _) =>
+        {
+            _touchMode = "pet";
+            petItem.Header = "✓ Поглаживания";
+            dragItem.Header = "Перетаскивание";
+        };
+        lockItem.Click += (_, _) =>
+        {
+            _lockDrag = !_lockDrag;
+            lockItem.Header = _lockDrag ? "✓ Блокировать перетаскивание" : "Блокировать перетаскивание";
+        };
+
+        var interaction = new NativeMenuItem { Header = "Взаимодействие" };
+        var submenu = new NativeMenu();
+        submenu.Items.Add(dragItem);
+        submenu.Items.Add(petItem);
+        submenu.Items.Add(new NativeMenuItemSeparator());
+        submenu.Items.Add(lockItem);
+        interaction.Menu = submenu;
+        menu.Items.Add(interaction);
+
         menu.Items.Add(new NativeMenuItemSeparator());
         menu.Items.Add(new NativeMenuItem { Header = "Выход", Command = new SimpleCommand(Close) });
 
