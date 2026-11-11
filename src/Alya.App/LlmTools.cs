@@ -75,7 +75,9 @@ public sealed class LlmTools
                 case "open_app":
                 {
                     var target = Arg("name");
-                    return _system.Launch(target) ? $"Открыла {target}." : $"Не нашла {target}.";
+                    if (_system.Launch(target)) return $"Открыла {target}.";
+                    if (_steam.Launch(target, out var gameName)) return $"Запускаю {gameName}.";
+                    return $"Не нашла {target}.";
                 }
                 case "close_app":
                 {

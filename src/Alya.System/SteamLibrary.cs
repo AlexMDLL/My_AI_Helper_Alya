@@ -21,14 +21,82 @@ public sealed class SteamLibrary
         }
     }
 
+    private static readonly Dictionary<string, string[]> Aliases = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["кс"] = new[] { "counter-strike" },
+        ["кс2"] = new[] { "counter-strike 2" },
+        ["кс 2"] = new[] { "counter-strike 2" },
+        ["кс го"] = new[] { "counter-strike" },
+        ["cs"] = new[] { "counter-strike" },
+        ["cs2"] = new[] { "counter-strike 2" },
+        ["контра"] = new[] { "counter-strike" },
+        ["контру"] = new[] { "counter-strike" },
+        ["дбд"] = new[] { "dead by daylight" },
+        ["dbd"] = new[] { "dead by daylight" },
+        ["дед бай дейлайт"] = new[] { "dead by daylight" },
+        ["дедбайдейлайт"] = new[] { "dead by daylight" },
+        ["мертвый свет"] = new[] { "dead by daylight" },
+        ["дота"] = new[] { "dota 2" },
+        ["доту"] = new[] { "dota 2" },
+        ["dota"] = new[] { "dota 2" },
+        ["ржавчина"] = new[] { "rust" },
+        ["раст"] = new[] { "rust" },
+        ["rust"] = new[] { "rust" },
+        ["гта"] = new[] { "grand theft auto" },
+        ["gta"] = new[] { "grand theft auto" },
+        ["пабг"] = new[] { "pubg" },
+        ["pubg"] = new[] { "pubg" },
+        ["террария"] = new[] { "terraria" },
+        ["террарию"] = new[] { "terraria" },
+        ["майнкрафт"] = new[] { "minecraft" },
+        ["апекс"] = new[] { "apex legends" },
+        ["apex"] = new[] { "apex legends" },
+        ["р6"] = new[] { "rainbow six" },
+        ["рэйнбоу"] = new[] { "rainbow six" },
+        ["варфейс"] = new[] { "warface" },
+        ["саундпад"] = new[] { "soundpad" },
+        ["обои"] = new[] { "wallpaper engine" },
+        ["втюб"] = new[] { "vtube studio" },
+        ["втуб"] = new[] { "vtube studio" }
+    };
+
     public (int AppId, string Name)? Find(string query)
     {
         EnsureLoaded();
-        var value = query.Trim().ToLowerInvariant();
+        var value = query.Trim().ToLowerInvariant().Replace('ё', 'е');
         if (value.Length == 0) return null;
-        return _games.FirstOrDefault(game => game.Name.ToLowerInvariant().Contains(value)) is { AppId: > 0 } match
-            ? match
-            : null;
+
+        if (Aliases.TryGetValue(value, out var patterns))
+        {
+            foreach (var pattern in patterns)
+            {
+                var hit = _games.FirstOrDefault(game => game.Name.ToLowerInvariant().Contains(pattern));
+                if (hit.AppId > 0) return hit;
+            }
+        }
+
+        var direct = _games.FirstOrDefault(game => game.Name.ToLowerInvariant().Contains(value));
+        if (direct.AppId > 0) return direct;
+
+        // поиск по отдельным словам: «запусти кс го» → counter-strike
+        var tokens = value.Split(new[] { ' ', ',', '.', '!', '?' }, StringSplitOptions.RemoveEmptyEntries)
+            .Where(token => token.Length >= 2)
+            .ToArray();
+        if (tokens.Length == 0) return null;
+
+        (int AppId, string Name)? best = null;
+        var bestScore = 0;
+        foreach (var game in _games)
+        {
+            var name = game.Name.ToLowerInvariant();
+            var score = tokens.Count(token => name.Contains(token));
+            if (score > bestScore)
+            {
+                bestScore = score;
+                best = game;
+            }
+        }
+        return bestScore > 0 ? best : null;
     }
 
     public bool Launch(string query, out string name)
