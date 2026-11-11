@@ -56,7 +56,14 @@
             </Border>
             <StackPanel Grid.Column="1" VerticalAlignment="Center">
               <TextBlock Text="АЛЯ" FontSize="14" FontWeight="SemiBold" Foreground="#EAF4FF" LetterSpacing="2"/>
-              <TextBlock x:Name="StatusText" Text="на связи" FontSize="11" Foreground="#8EA4BD"/>
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock x:Name="StatusText" Text="на связи" FontSize="11" Foreground="#8EA4BD"/>
+                <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                  <Ellipse x:Name="BrainDot" Width="7" Height="7" Fill="#7F93AA" ToolTip.Tip="Мозг (Ollama)"/>
+                  <Ellipse x:Name="EarsDot" Width="7" Height="7" Fill="#7F93AA" ToolTip.Tip="Слух (микрофон)"/>
+                  <Ellipse x:Name="VoiceDot" Width="7" Height="7" Fill="#7F93AA" ToolTip.Tip="Голос (TTS)"/>
+                </StackPanel>
+              </StackPanel>
             </StackPanel>
             <Button Grid.Column="2" x:Name="SettingsButton" Content="⚙" Background="Transparent" Foreground="#8EA4BD" BorderThickness="0" Padding="8,2" VerticalAlignment="Top" Margin="0,0,4,0"/>
             <Button Grid.Column="3" x:Name="CloseButton" Content="✕" Background="Transparent"

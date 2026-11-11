@@ -455,6 +455,7 @@ public partial class MainWindow : Window
             AnimateCharacterIn();
             StatusText.Text = $"голос: {(_silero.Available ? "Silero" : _piper.Available ? "Piper" : "Windows")}";
             LoadCharacter();
+            _voiceDotUpdate();
             _voiceInput.TextRecognized += OnVoiceText;
             if (!_settings.PushToTalk) _voiceInput.Start();
         global::System.Threading.Tasks.Task.Run(async () =>
@@ -715,6 +716,28 @@ public partial class MainWindow : Window
         _talking = false;
         StatusText.Text = "на связи";
         PlayScene("VideoStand");
+    }
+    private DispatcherTimer? _statusTimer;
+
+    private void _voiceDotUpdate()
+    {
+        _statusTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(8) };
+        _statusTimer.Tick += async (_, _) =>
+        {
+            try
+            {
+                using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
+                await http.GetStringAsync("http://127.0.0.1:11434/api/tags");
+                BrainDot.Fill = new SolidColorBrush(Color.Parse("#5EEAD4"));
+            }
+            catch
+            {
+                BrainDot.Fill = new SolidColorBrush(Color.Parse("#FF6B6B"));
+            }
+            EarsDot.Fill = new SolidColorBrush(Color.Parse(_voiceInput.Available ? "#5EEAD4" : "#FFB020"));
+            VoiceDot.Fill = new SolidColorBrush(Color.Parse(_silero.Available || _piper.Available ? "#5EEAD4" : "#FFB020"));
+        };
+        _statusTimer.Start();
     }
     private void OnVoiceText(string text)
     {
