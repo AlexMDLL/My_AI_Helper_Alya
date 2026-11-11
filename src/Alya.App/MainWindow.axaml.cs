@@ -211,7 +211,7 @@ public partial class MainWindow : Window
             LoadCharacter();
             CreateTray();
             AnimateEntrance();
-            if (Environment.GetEnvironmentVariable("ALYA_SETTINGS") == "1") OpenSettings();
+
             _hwnd = TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
             _clickTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(60) };
             _clickTimer.Tick += (_, _) => UpdateClickThrough();
