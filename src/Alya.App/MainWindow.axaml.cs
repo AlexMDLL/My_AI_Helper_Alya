@@ -260,11 +260,15 @@ public partial class MainWindow : Window
 
     private void LoadCharacter()
     {
-        var root = Environment.GetEnvironmentVariable("ALYA_ANIM_ROOT")
-            ?? Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                "Projects", "jarvis", "resources", "anim");
-        if (!Directory.Exists(root)) return;
+        var candidates = new List<string>();
+        var custom = Environment.GetEnvironmentVariable("ALYA_ANIM_ROOT");
+        if (!string.IsNullOrWhiteSpace(custom)) candidates.Add(custom);
+        candidates.Add(Path.Combine(AppContext.BaseDirectory, "Assets", "anim"));
+        candidates.Add(Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            "Projects", "jarvis", "resources", "anim"));
+        var root = candidates.FirstOrDefault(Directory.Exists);
+        if (root is null) return;
 
         foreach (var name in new[] { "VideoStand", "VideoTalk", "VideoWink", "VideoDeny", "VideoSurprise", "VideoShyJoy" })
         {
