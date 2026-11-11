@@ -122,6 +122,32 @@ public partial class MainWindow : Window
         Opacity = Math.Clamp(_settings.Opacity, 0.6, 1);
         MessagesList.ItemsSource = _messages;
         ChatPanel.IsVisible = false;
+        var memoryTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(5) };
+        memoryTimer.Tick += (_, _) =>
+        {
+            try
+            {
+                lock (_cacheLock)
+                {
+                    foreach (var key in _cache.Keys.ToList())
+                    {
+                        if (!_frames.Contains(key)) _cache.Remove(key);
+                    }
+                    while (_cache.Count > 60)
+                    {
+                        var oldest = _cacheOrder.Count > 0 ? _cacheOrder.Dequeue() : null;
+                        if (oldest is null) break;
+                        if (!string.Equals(oldest, _frames[_frame], StringComparison.OrdinalIgnoreCase)) _cache.Remove(oldest);
+                    }
+                }
+                GC.Collect(2, GCCollectionMode.Optimized, false);
+            }
+            catch
+            {
+                // очистка не критична
+            }
+        };
+        memoryTimer.Start();
         _hideTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _hideTimer.Tick += (_, _) =>
         {
@@ -507,7 +533,7 @@ public partial class MainWindow : Window
             {
                 _cache[path] = bitmap;
                 _cacheOrder.Enqueue(path);
-                while (_cacheOrder.Count > 140)
+                while (_cacheOrder.Count > 80)
                 {
                     var old = _cacheOrder.Dequeue();
                     if (!string.Equals(old, path, StringComparison.OrdinalIgnoreCase)) _cache.Remove(old);
@@ -528,7 +554,7 @@ public partial class MainWindow : Window
         {
             try
             {
-                for (var offset = 1; offset <= 90; offset++)
+                for (var offset = 1; offset <= 50; offset++)
                 {
                     var index = (start + offset) % snapshot.Length;
                     var path = snapshot[index];
@@ -543,7 +569,7 @@ public partial class MainWindow : Window
                         {
                             _cache[path] = bitmap;
                             _cacheOrder.Enqueue(path);
-                            while (_cacheOrder.Count > 140)
+                            while (_cacheOrder.Count > 80)
                             {
                                 var old = _cacheOrder.Dequeue();
                                 if (!string.Equals(old, path, StringComparison.OrdinalIgnoreCase)) _cache.Remove(old);
