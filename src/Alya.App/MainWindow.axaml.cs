@@ -48,6 +48,7 @@ public partial class MainWindow : Window
     private bool _dragging;
     private bool _dragMoved;
     private bool _hiddenByFilter;
+    private bool _initialized;
     private DateTime _lastActivity = DateTime.Now;
     private DispatcherTimer? _hideTimer;
     private DispatcherTimer? _bubbleTimer;
@@ -379,6 +380,13 @@ public partial class MainWindow : Window
 
         Opened += (_, _) =>
         {
+            if (_initialized)
+            {
+                ApplyWindowMode();
+                UpdateWindowSize();
+                return;
+            }
+            _initialized = true;
             ApplyWindowMode();
             UpdateWindowSize();
             AnimateCharacterIn();
