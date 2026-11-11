@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 
 namespace Alya.App;
@@ -25,6 +26,16 @@ public partial class SettingsWindow : Window
             _ => 0
         });
 
+        NavGeneral.Click += (_, _) => SelectTab(0);
+        NavChat.Click += (_, _) => SelectTab(1);
+        NavView.Click += (_, _) => SelectTab(2);
+
+        TitleBar.PointerPressed += (_, args) =>
+        {
+            if (args.Source is Button) return;
+            BeginMoveDrag(args);
+        };
+
         Opacity = 0;
         var started = DateTime.UtcNow;
         var timer = new Avalonia.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
@@ -41,6 +52,19 @@ public partial class SettingsWindow : Window
         SaveButton.Click += (_, _) => Save();
         CancelButton.Click += (_, _) => Close();
     }
+
+    private void SelectTab(int index)
+    {
+        PanelGeneral.IsVisible = index == 0;
+        PanelChat.IsVisible = index == 1;
+        PanelView.IsVisible = index == 2;
+
+        NavGeneral.Classes.Set("active", index == 0);
+        NavChat.Classes.Set("active", index == 1);
+        NavView.Classes.Set("active", index == 2);
+    }
+
+    private void OnCancel(object? sender, RoutedEventArgs e) => Close();
 
     private static void ApplyAutostart(bool enabled)
     {
