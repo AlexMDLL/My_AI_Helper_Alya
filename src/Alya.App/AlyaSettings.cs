@@ -5,8 +5,8 @@ namespace Alya.App;
 public sealed class AlyaSettings
 {
     public string Model { get; set; } = "qwen2.5:7b-instruct";
-    public string Speaker { get; set; } = "xenia";
-    public double Pitch { get; set; } = 1.1;
+    public string Speaker { get; set; } = "baya";
+    public double Pitch { get; set; } = 1.12;
     public int Fps { get; set; } = 120;
     public int ChatAutoHideSeconds { get; set; } = 20;
     public bool Autostart { get; set; }

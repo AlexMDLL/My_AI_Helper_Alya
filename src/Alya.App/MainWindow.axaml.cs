@@ -97,6 +97,7 @@ public partial class MainWindow : Window
         _llm = new OllamaLlmClient(_settings.Model);
         _silero.Speaker = _settings.Speaker;
         _silero.Pitch = _settings.Pitch;
+        _piper.Pitch = _settings.Pitch;
         _silero.OnEvent += kind => Dispatcher.UIThread.Post(() => HandleVoiceEvent(kind));
         _sapi.OnEvent += kind => Dispatcher.UIThread.Post(() => HandleVoiceEvent(kind));
         _piper.OnEvent += kind => Dispatcher.UIThread.Post(() => HandleVoiceEvent(kind));
@@ -646,6 +647,7 @@ public partial class MainWindow : Window
         _settings = AlyaSettings.Load();
         _silero.Speaker = _settings.Speaker;
         _silero.Pitch = _settings.Pitch;
+        _piper.Pitch = _settings.Pitch;
         if (!string.Equals(previousModel, _settings.Model, StringComparison.OrdinalIgnoreCase))
         {
             _llm = new OllamaLlmClient(_settings.Model);

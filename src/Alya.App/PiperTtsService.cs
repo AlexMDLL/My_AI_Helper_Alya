@@ -13,6 +13,7 @@ public sealed class PiperTtsService : ITtsService, IDisposable
     private readonly object _gate = new();
 
     public event Action<string>? OnEvent;
+    public double Pitch { get; set; } = 1.12;
 
     public PiperTtsService(string? root = null)
     {
@@ -77,6 +78,7 @@ public sealed class PiperTtsService : ITtsService, IDisposable
             try
             {
                 if (!File.Exists(wav)) return;
+                PitchShift(wav, 1.0 + (Pitch - 1.0) * 0.85);
                 OnEvent?.Invoke("tts_start");
                 using var player = new SoundPlayer(wav);
                 player.PlaySync();
@@ -102,6 +104,71 @@ public sealed class PiperTtsService : ITtsService, IDisposable
         return Task.CompletedTask;
     }
 
+    private static void PitchShift(string path, double factor)
+    {
+        try
+        {
+            var bytes = File.ReadAllBytes(path);
+            if (bytes.Length < 44) return;
+            var dataPos = -1;
+            var dataSize = 0;
+            var channels = 1;
+            var bits = 16;
+            var pos = 12;
+            while (pos + 8 <= bytes.Length)
+            {
+                var id = global::System.Text.Encoding.ASCII.GetString(bytes, pos, 4);
+                var size = BitConverter.ToInt32(bytes, pos + 4);
+                if (id == "fmt ")
+                {
+                    channels = BitConverter.ToInt16(bytes, pos + 10);
+                    bits = BitConverter.ToInt16(bytes, pos + 22);
+                }
+                if (id == "data")
+                {
+                    dataPos = pos + 8;
+                    dataSize = size;
+                    break;
+                }
+                pos += 8 + size + (size % 2);
+            }
+            if (dataPos < 0 || bits != 16) return;
+            var frameBytes = channels * 2;
+            var frames = dataSize / frameBytes;
+            var newFrames = (int)(frames / factor);
+            if (newFrames <= 0) return;
+
+            var shifted = new byte[newFrames * frameBytes];
+            for (var i = 0; i < newFrames; i++)
+            {
+                var source = i * factor;
+                var index = (int)source;
+                var fraction = source - index;
+                var next = Math.Min(index + 1, frames - 1);
+                for (var channel = 0; channel < channels; channel++)
+                {
+                    var a = BitConverter.ToInt16(bytes, dataPos + index * frameBytes + channel * 2);
+                    var b = BitConverter.ToInt16(bytes, dataPos + next * frameBytes + channel * 2);
+                    var sample = (int)Math.Round(a + (b - a) * fraction);
+                    shifted[i * frameBytes + channel * 2] = (byte)(sample & 0xFF);
+                    shifted[i * frameBytes + channel * 2 + 1] = (byte)((sample >> 8) & 0xFF);
+                }
+            }
+
+            var header = new byte[dataPos];
+            Array.Copy(bytes, header, dataPos);
+            var total = dataPos + shifted.Length;
+            BitConverter.GetBytes(total - 8).CopyTo(header, 4);
+            BitConverter.GetBytes(shifted.Length).CopyTo(header, dataPos - 4);
+            using var output = File.Create(path);
+            output.Write(header);
+            output.Write(shifted);
+        }
+        catch
+        {
+            // если не получилось — играем как есть
+        }
+    }
     public void Dispose()
     {
         // ресурсов не держим
