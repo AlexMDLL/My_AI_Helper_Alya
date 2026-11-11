@@ -15,9 +15,14 @@ public sealed class SapiTtsService : ITtsService, IDisposable
     {
         try
         {
-            var russian = _synth.GetInstalledVoices()
-                .FirstOrDefault(voice => voice.VoiceInfo.Culture.Name.StartsWith("ru", StringComparison.OrdinalIgnoreCase));
-            if (russian is not null) _synth.SelectVoice(russian.VoiceInfo.Name);
+            var voices = _synth.GetInstalledVoices().Select(voice => voice.VoiceInfo).ToList();
+            var preferred = voices.FirstOrDefault(voice =>
+                    voice.Culture.Name.StartsWith("ru", StringComparison.OrdinalIgnoreCase) &&
+                    (voice.Name.Contains("Irina", StringComparison.OrdinalIgnoreCase) ||
+                     voice.Name.Contains("Elena", StringComparison.OrdinalIgnoreCase)))
+                ?? voices.FirstOrDefault(voice => voice.Culture.Name.StartsWith("ru", StringComparison.OrdinalIgnoreCase))
+                ?? voices.FirstOrDefault(voice => voice.Gender == VoiceGender.Female);
+            if (preferred is not null) _synth.SelectVoice(preferred.Name);
         }
         catch
         {
@@ -34,10 +39,12 @@ public sealed class SapiTtsService : ITtsService, IDisposable
         {
             try
             {
-                _synth.Rate = 1;
+                _synth.Rate = 0;
                 _synth.SpeakAsyncCancelAll();
                 OnEvent?.Invoke("tts_start");
-                _synth.SpeakAsync(text);
+                var safe = text.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;");
+                var ssml = $"<speak version=\"1.0\" xml:lang=\"ru-RU\"><prosody pitch=\"+18%\" rate=\"-4%\">{safe}</prosody></speak>";
+                _synth.SpeakSsmlAsync(ssml);
             }
             catch
             {
