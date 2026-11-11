@@ -24,6 +24,7 @@ public partial class SettingsWindow : Window
         DragEnabledBox.IsChecked = _settings.DragEnabled;
         FallEnabledBox.IsChecked = _settings.FallEnabled;
         PetEnabledBox.IsChecked = _settings.PetEnabled;
+        AlwaysListenBox.IsChecked = _settings.AlwaysListen;
         OffsetSlider.Value = _settings.PersonaOffset;
         BubblesBox.IsChecked = _settings.Bubbles;
         TtsEnabled.IsChecked = _settings.TtsEnabled;
@@ -276,6 +277,7 @@ public partial class SettingsWindow : Window
         _settings.DragEnabled = DragEnabledBox.IsChecked == true;
         _settings.FallEnabled = FallEnabledBox.IsChecked == true;
         _settings.PetEnabled = PetEnabledBox.IsChecked == true;
+        _settings.AlwaysListen = AlwaysListenBox.IsChecked == true;
         _settings.Care = CareBox.IsChecked == true;
         _settings.PersonaScale = Math.Round(ScaleSlider.Value, 2);
         _settings.PersonaOffset = (int)OffsetSlider.Value;

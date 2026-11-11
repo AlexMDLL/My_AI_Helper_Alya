@@ -96,6 +96,7 @@ public partial class MainWindow : Window
         public int X;
         public int Y;
     }
+    private readonly VoiceInputService _voiceInput = new();
     private TrayIcon? _tray;
     private SettingsWindow? _settingsWindow;
 
@@ -283,6 +284,8 @@ public partial class MainWindow : Window
             Position = new PixelPoint(targetX, targetY);
             StatusText.Text = $"голос: {(_silero.Available ? "Silero" : _piper.Available ? "Piper" : "Windows")}";
             LoadCharacter();
+            _voiceInput.TextRecognized += OnVoiceText;
+            _voiceInput.Start();
             StartFall();
             CreateTray();
             AnimateEntrance();
@@ -505,6 +508,20 @@ public partial class MainWindow : Window
         });
     }
 
+    private void OnVoiceText(string text)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            var lower = text.ToLowerInvariant();
+            var hasWake = lower.Contains("аля") || lower.Contains("алла") || lower.Contains("алю") || lower.Contains("але") || lower.Contains("ало");
+            if (!_settings.AlwaysListen && !hasWake) return;
+            var cleaned = Regex.Replace(text, @"(?i)\b(аля|алла|алю|але|ало)\b[\s,!\.\?]*", " ").Trim();
+            if (cleaned.Length < 2) return;
+            InputBox.Text = cleaned;
+            Send();
+            return;
+        });
+    }
     private string? TryOpenApp(string text)
     {
         var match = Regex.Match(text.Trim(), @"^(открой|открыть|запусти|включи)\s+(.+)$", RegexOptions.IgnoreCase);
