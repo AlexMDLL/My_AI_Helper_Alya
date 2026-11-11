@@ -88,7 +88,7 @@ public sealed class MemoryGraph : Control
     {
         if (_nodes.Count == 0) return;
         var random = new Random(42);
-        var radius = Math.Max(90, _nodes.Count * 12);
+        var radius = Math.Max(60, _nodes.Count * 9);
         for (var i = 0; i < _nodes.Count; i++)
         {
             var angle = Math.PI * 2 * i / _nodes.Count;
@@ -105,7 +105,7 @@ public sealed class MemoryGraph : Control
                     var dx = a.X - b.X;
                     var dy = a.Y - b.Y;
                     var distance = Math.Max(20, Math.Sqrt(dx * dx + dy * dy));
-                    var force = 4200 / (distance * distance);
+                    var force = 2300 / (distance * distance);
                     a.VX += dx / distance * force;
                     a.VY += dy / distance * force;
                 }
@@ -117,7 +117,7 @@ public sealed class MemoryGraph : Control
                 var dx = b.X - a.X;
                 var dy = b.Y - a.Y;
                 var distance = Math.Max(1, Math.Sqrt(dx * dx + dy * dy));
-                var force = (distance - 120) * 0.012;
+                var force = (distance - 78) * 0.014;
                 a.VX += dx / distance * force;
                 a.VY += dy / distance * force;
                 b.VX -= dx / distance * force;
@@ -231,17 +231,14 @@ public sealed class MemoryGraph : Control
         {
             _selected = node;
             SelectionChanged?.Invoke(node);
-            if (!_autoZoomed)
-            {
-                _zoomTarget = node;
-                _targetZoom = 1.9;
-                _autoZoomed = true;
-            }
+            _zoomTarget = node;
+            _targetZoom = 1.9;
             _timer?.Start();
         }
         else
         {
             _dragging = true;
+            _zoomTarget = null;
             _lastPointer = point;
             e.Pointer.Capture(this);
         }
@@ -253,6 +250,7 @@ public sealed class MemoryGraph : Control
         base.OnPointerMoved(e);
         if (!_dragging) return;
         var point = e.GetCurrentPoint(this).Position;
+        _zoomTarget = null;
         _pan += point - _lastPointer;
         _lastPointer = point;
         InvalidateVisual();
