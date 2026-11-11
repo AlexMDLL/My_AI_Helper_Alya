@@ -35,6 +35,7 @@ public partial class SettingsWindow : Window
             _ => 0
         });
         OpacitySlider.Value = 1;
+        UpdateLabels();
         Opacity = 1;
         RefreshAccent();
         UpdateRgbFromAccent();
@@ -91,6 +92,7 @@ public partial class SettingsWindow : Window
             if (args.Property != Slider.ValueProperty) return;
             _settings.PersonaScale = Math.Round(ScaleSlider.Value, 2);
             _settings.PersonaOffset = (int)OffsetSlider.Value;
+            UpdateLabels();
             _settings.Save();
         };
         OffsetSlider.PropertyChanged += (_, args) =>
@@ -98,8 +100,12 @@ public partial class SettingsWindow : Window
             if (args.Property != Slider.ValueProperty) return;
             _settings.PersonaScale = Math.Round(ScaleSlider.Value, 2);
             _settings.PersonaOffset = (int)OffsetSlider.Value;
+            UpdateLabels();
             _settings.Save();
         };
+
+        PitchSlider.PropertyChanged += (_, args) => { if (args.Property == Slider.ValueProperty) UpdateLabels(); };
+        OpacitySlider.PropertyChanged += (_, args) => { if (args.Property == Slider.ValueProperty) UpdateLabels(); };
 
         CheckModelButton.Click += async (_, _) => await CheckOllamaAsync();
         ClearMemoryButton.Click += (_, _) => ClearMemory();
@@ -240,6 +246,13 @@ public partial class SettingsWindow : Window
         }
     }
 
+    private void UpdateLabels()
+    {
+        PitchLabel.Text = $"Тембр — {PitchSlider.Value:0.00}";
+        OpacityLabel.Text = $"Прозрачность — {(int)Math.Round(OpacitySlider.Value * 100)}%";
+        ScaleLabel.Text = $"Размер — {ScaleSlider.Value:0.00}";
+        OffsetLabel.Text = $"Сдвиг — {(int)OffsetSlider.Value} px";
+    }
     private void Save()
     {
         _settings.Model = ModelBox.Text?.Trim() is { Length: > 0 } model ? model : "qwen2.5:7b-instruct";
