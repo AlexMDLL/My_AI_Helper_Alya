@@ -6,6 +6,8 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Platform;
 using Avalonia.Threading;
+using Alya.Core;
+using Alya.Llm;
 using Alya.System;
 using Alya.Voice;
 
@@ -15,6 +17,8 @@ public partial class MainWindow : Window
 {
     private readonly WindowsSystemController _system = new();
     private readonly TcpSileroTtsService _tts = new();
+    private readonly OllamaLlmClient _llm = new();
+    private readonly List<ChatMessage> _history = new();
     private readonly ObservableCollection<Bubble> _messages = new();
     private TrayIcon? _tray;
 
@@ -40,6 +44,12 @@ public partial class MainWindow : Window
             Position = new PixelPoint(screen.X + screen.Width - 420, screen.Y + 60);
             StatusText.Text = $"голос: {(_tts.Available ? "Silero" : "нет")}";
             CreateTray();
+            var ask = Environment.GetEnvironmentVariable("ALYA_ASK");
+            if (!string.IsNullOrWhiteSpace(ask))
+            {
+                InputBox.Text = ask;
+                Send();
+            }
         };
     }
 
@@ -71,8 +81,19 @@ public partial class MainWindow : Window
         if (string.IsNullOrEmpty(text)) return;
         InputBox.Text = string.Empty;
         Add("user", text);
+        _history.Add(new ChatMessage("user", text, DateTimeOffset.Now));
 
-        var reply = Reply(text);
+        StatusText.Text = "думает…";
+        string reply;
+        try
+        {
+            reply = await _llm.CompleteAsync(_history);
+        }
+        catch (Exception error)
+        {
+            reply = $"Не получилось подумать: {error.Message}";
+        }
+        _history.Add(new ChatMessage("assistant", reply, DateTimeOffset.Now));
         Add("alya", reply);
         StatusText.Text = "говорит…";
         try
@@ -83,15 +104,6 @@ public partial class MainWindow : Window
         {
             StatusText.Text = "на связи";
         }
-    }
-
-    private static string Reply(string text)
-    {
-        var lower = text.ToLowerInvariant();
-        if (lower.Contains("привет")) return "Привет. Я пока на C#, но уже с голосом.";
-        if (lower.Contains("как дела")) return "Нормально. Интерфейс вот собираю.";
-        if (lower.Contains("стим")) return "Steam? Пока не умею, но скоро научусь.";
-        return $"Пока я умею немного. Ты сказал: {text}";
     }
 
     private void Add(string role, string text)

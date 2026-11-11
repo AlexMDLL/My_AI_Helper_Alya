@@ -4,6 +4,7 @@
     <ProjectReference Include="..\Alya.Core\Alya.Core.csproj" />
     <ProjectReference Include="..\Alya.Voice\Alya.Voice.csproj" />
     <ProjectReference Include="..\Alya.System\Alya.System.csproj" />
+    <ProjectReference Include="..\Alya.Llm\Alya.Llm.csproj" />
   </ItemGroup>
 
   <ItemGroup>

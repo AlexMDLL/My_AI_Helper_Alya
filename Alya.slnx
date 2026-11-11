@@ -2,6 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/Alya.App/Alya.App.csproj" />
     <Project Path="src/Alya.Core/Alya.Core.csproj" />
+    <Project Path="src/Alya.Llm/Alya.Llm.csproj" />
     <Project Path="src/Alya.System/Alya.System.csproj" />
     <Project Path="src/Alya.Voice/Alya.Voice.csproj" />
   </Folder>
