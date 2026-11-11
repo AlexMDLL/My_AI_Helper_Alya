@@ -1,0 +1,58 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:Alya.App"
+        x:Class="Alya.App.MainWindow"
+        Title="Аля"
+        Width="400" Height="720"
+        CanResize="False"
+        SystemDecorations="None"
+        TransparencyLevelHint="Transparent"
+        Background="Transparent"
+        Topmost="True"
+        WindowStartupLocation="Manual">
+  <Border CornerRadius="18"
+          Background="#FF0D1522"
+          BorderBrush="#2B3F5A"
+          BorderThickness="1"
+          BoxShadow="0 24 60 0 #99000000"
+          Margin="10">
+    <Grid RowDefinitions="Auto,*,Auto">
+
+      <Border Grid.Row="0" Padding="16,12" Background="#331B2C42" CornerRadius="18,18,0,0">
+        <Grid ColumnDefinitions="Auto,*,Auto">
+          <Ellipse Width="10" Height="10" Fill="#5EEAD4" VerticalAlignment="Center" Margin="0,0,10,0"/>
+          <StackPanel Grid.Column="1">
+            <TextBlock Text="АЛЯ" FontSize="14" FontWeight="SemiBold" Foreground="#E8F1FB" LetterSpacing="2"/>
+            <TextBlock x:Name="StatusText" Text="на связи" FontSize="11" Foreground="#8EA4BD"/>
+          </StackPanel>
+          <Button Grid.Column="2" x:Name="CloseButton" Content="✕" Background="Transparent" Foreground="#8EA4BD" BorderThickness="0" Padding="8,2"/>
+        </Grid>
+      </Border>
+
+      <ScrollViewer Grid.Row="1" Margin="14,10" VerticalScrollBarVisibility="Auto">
+        <ItemsControl x:Name="MessagesList">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="local:Bubble">
+              <Border CornerRadius="14" Padding="10,8" Margin="0,4" MaxWidth="330"
+                      HorizontalAlignment="{Binding Alignment}"
+                      Background="{Binding Background}">
+                <StackPanel>
+                  <TextBlock Text="{Binding Text}" TextWrapping="Wrap" FontSize="13" Foreground="#E6EDF5"/>
+                  <TextBlock Text="{Binding Time}" FontSize="10" Foreground="#7F93AA" HorizontalAlignment="Right" Margin="0,4,0,0"/>
+                </StackPanel>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </ScrollViewer>
+
+      <Border Grid.Row="2" Margin="12" Padding="8" CornerRadius="14" Background="#66192A40" BorderBrush="#2B3F5A" BorderThickness="1">
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBox x:Name="InputBox" Watermark="Сообщение…" Background="Transparent" BorderThickness="0" FontSize="13" VerticalContentAlignment="Center"/>
+          <Button Grid.Column="1" x:Name="SendButton" Content="→" Width="38" Height="34" CornerRadius="12"
+                  Background="#38BDF8" Foreground="#06232B" FontWeight="Bold"/>
+        </Grid>
+      </Border>
+    </Grid>
+  </Border>
+</Window>
