@@ -20,6 +20,8 @@ public partial class SettingsWindow : Window
         FpsBox.Value = _settings.Fps;
         PitchSlider.Value = _settings.Pitch;
         AutostartBox.IsChecked = _settings.Autostart;
+        ScaleSlider.Value = _settings.PersonaScale;
+        OffsetSlider.Value = _settings.PersonaOffset;
         BubblesBox.IsChecked = _settings.Bubbles;
         TtsEnabled.IsChecked = _settings.TtsEnabled;
         CareBox.IsChecked = _settings.Care;
@@ -241,6 +243,8 @@ public partial class SettingsWindow : Window
         _settings.Bubbles = BubblesBox.IsChecked == true;
         _settings.TtsEnabled = TtsEnabled.IsChecked == true;
         _settings.Care = CareBox.IsChecked == true;
+        _settings.PersonaScale = Math.Round(ScaleSlider.Value, 2);
+        _settings.PersonaOffset = (int)OffsetSlider.Value;
         _settings.Temperature = Math.Round((double)(TemperatureBox.Value ?? 0.8m), 2);
         _settings.Opacity = Math.Clamp(OpacitySlider.Value, 0.6, 1);
         _settings.Accent = _accent;

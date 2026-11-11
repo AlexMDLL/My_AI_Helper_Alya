@@ -108,6 +108,7 @@ public partial class MainWindow : Window
         _piper.OnEvent += kind => Dispatcher.UIThread.Post(() => HandleVoiceEvent(kind));
         _llm.ExtraContext = _memory.ToPrompt();
         ApplyAccent();
+        ApplyCharacterLayout();
         Opacity = Math.Clamp(_settings.Opacity, 0.6, 1);
         MessagesList.ItemsSource = _messages;
         ChatPanel.RenderTransform = _panelOffset;
@@ -451,6 +452,7 @@ public partial class MainWindow : Window
             _memory.AddFact(fact);
             _llm.ExtraContext = _memory.ToPrompt();
         ApplyAccent();
+        ApplyCharacterLayout();
         Opacity = Math.Clamp(_settings.Opacity, 0.6, 1);
             return $"Запомнила: {fact}";
         }
@@ -461,6 +463,7 @@ public partial class MainWindow : Window
             _memory.AddRule(rule);
             _llm.ExtraContext = _memory.ToPrompt();
         ApplyAccent();
+        ApplyCharacterLayout();
         Opacity = Math.Clamp(_settings.Opacity, 0.6, 1);
             return "Хорошо, буду соблюдать.";
         }
@@ -669,6 +672,14 @@ public partial class MainWindow : Window
         window.ShowDialog(this);
     }
 
+    private void ApplyCharacterLayout()
+    {
+        var scale = Math.Clamp(_settings.PersonaScale, 0.6, 1.3);
+        CharacterImage.RenderTransform = new ScaleTransform(scale, scale);
+        CharacterFade.RenderTransform = new ScaleTransform(scale, scale);
+        CharacterImage.Margin = new Avalonia.Thickness(0, 0, 10, -Math.Clamp(_settings.PersonaOffset, 0, 200));
+        CharacterFade.Margin = new Avalonia.Thickness(0, 0, 10, -Math.Clamp(_settings.PersonaOffset, 0, 200));
+    }
     private void ApplyAccent()
     {
         try
