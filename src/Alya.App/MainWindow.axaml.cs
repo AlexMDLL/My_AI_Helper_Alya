@@ -17,7 +17,8 @@ public partial class MainWindow : Window
 {
     private readonly WindowsSystemController _system = new();
     private readonly TcpSileroTtsService _tts = new();
-    private readonly OllamaLlmClient _llm = new();
+    private OllamaLlmClient _llm = new();
+    private AlyaSettings _settings = new();
     private readonly List<ChatMessage> _history = new();
     private readonly Dictionary<string, string[]> _scenes = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Avalonia.Media.Imaging.Bitmap> _cache = new();
@@ -46,6 +47,10 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        _settings = AlyaSettings.Load();
+        _llm = new OllamaLlmClient(_settings.Model);
+        _tts.Speaker = _settings.Speaker;
+        _tts.Pitch = _settings.Pitch;
         MessagesList.ItemsSource = _messages;
 
         SendButton.Click += (_, _) => Send();
@@ -168,6 +173,7 @@ public partial class MainWindow : Window
         menu.Items.Add(interaction);
 
         menu.Items.Add(new NativeMenuItemSeparator());
+        menu.Items.Add(new NativeMenuItem { Header = "Настройки", Command = new SimpleCommand(OpenSettings) });
         menu.Items.Add(new NativeMenuItem { Header = "Выход", Command = new SimpleCommand(Close) });
 
         _tray = new TrayIcon
@@ -198,7 +204,7 @@ public partial class MainWindow : Window
         if (!_scenes.ContainsKey("VideoStand")) return;
 
         PlayScene("VideoStand");
-        _animTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(8) };
+        _animTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1000.0 / Math.Clamp(_settings.Fps, 24, 240)) };
         _animTimer.Tick += (_, _) => Tick();
         _animTimer.Start();
 
@@ -315,6 +321,29 @@ public partial class MainWindow : Window
                 _prefetching = false;
             }
         });
+    }
+
+    private void OpenSettings()
+    {
+        var window = new SettingsWindow();
+        window.Closed += (_, _) => ApplySettings();
+        window.ShowDialog(this);
+    }
+
+    private void ApplySettings()
+    {
+        var previousModel = _settings.Model;
+        _settings = AlyaSettings.Load();
+        _tts.Speaker = _settings.Speaker;
+        _tts.Pitch = _settings.Pitch;
+        if (!string.Equals(previousModel, _settings.Model, StringComparison.OrdinalIgnoreCase))
+        {
+            _llm = new OllamaLlmClient(_settings.Model);
+        }
+        if (_animTimer is not null)
+        {
+            _animTimer.Interval = TimeSpan.FromMilliseconds(1000.0 / Math.Clamp(_settings.Fps, 24, 240));
+        }
     }
 
     private Point ScreenPoint(Point local)

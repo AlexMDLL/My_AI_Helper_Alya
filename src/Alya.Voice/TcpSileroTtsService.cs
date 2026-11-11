@@ -35,6 +35,8 @@ public sealed class TcpSileroTtsService : ITtsService, IDisposable
     }
 
     public bool Available => File.Exists(_bridge) && File.Exists(_python);
+    public string Speaker { get; set; } = "xenia";
+    public double Pitch { get; set; } = 0.97;
 
     public Task SpeakAsync(string text, string emotion = "neutral", CancellationToken cancellationToken = default)
     {
@@ -48,8 +50,8 @@ public sealed class TcpSileroTtsService : ITtsService, IDisposable
         {
             cmd = "speak",
             text,
-            pitch = 0.97,
-            speaker = "xenia",
+            pitch = Pitch,
+            speaker = Speaker,
             model = "v5",
             emotion
         });
