@@ -124,12 +124,7 @@ public partial class MainWindow : Window
         _hideTimer.Tick += (_, _) =>
         {
             var fresh = AlyaSettings.Load();
-            if (Math.Abs(fresh.PersonaScale - _settings.PersonaScale) > 0.001 || fresh.PersonaOffset != _settings.PersonaOffset)
-            {
-                _settings.PersonaScale = fresh.PersonaScale;
-                _settings.PersonaOffset = fresh.PersonaOffset;
-                ApplyCharacterLayout();
-            }
+
             if (_settingsWindow is not null) return;
             if (!ChatPanel.IsVisible) return;
             if (fresh.ChatAutoHideSeconds <= 0) return;
@@ -142,7 +137,7 @@ public partial class MainWindow : Window
         {
             if (_settings.Fullscreen || _dragging || Screens.Primary is null) return;
             var work = Screens.Primary.WorkingArea;
-            var floor = work.Y + work.Height - (int)Height + Math.Clamp(_settings.PersonaOffset, -100, 200);
+            var floor = work.Y + work.Height - (int)Height;
             if (Math.Abs(Position.Y - floor) > 120) return;
             if (Position.Y == floor) return;
             Position = new PixelPoint(Position.X, floor);
@@ -195,21 +190,6 @@ public partial class MainWindow : Window
         HeaderBar.PointerReleased += (_, _) => _panelDragging = false;
 
         SettingsButton.Click += (_, _) => OpenSettings();
-        CharacterImage.PointerWheelChanged += (_, args) =>
-        {
-            var delta = args.Delta.Y > 0 ? 0.05 : -0.05;
-            if (args.KeyModifiers.HasFlag(KeyModifiers.Shift))
-            {
-                _settings.PersonaOffset = Math.Clamp(_settings.PersonaOffset - (int)(delta * 200), -100, 200);
-            }
-            else
-            {
-                _settings.PersonaScale = Math.Clamp(Math.Round(_settings.PersonaScale + delta, 2), 0.6, 1.3);
-            }
-            _settings.Save();
-            ApplyCharacterLayout();
-            args.Handled = true;
-        };
         CharacterImage.PointerPressed += (_, args) =>
         {
             var point = args.GetCurrentPoint(CharacterImage);
@@ -812,54 +792,48 @@ public partial class MainWindow : Window
         if (!_settings.Fullscreen) UpdateWindowSize();
     }
 
+    private const int ModelHeight = 504; // 840 * 0.6
+    private const int ModelWidth = 324;  // 540 * 0.6
+
     private void UpdateWindowSize()
     {
         var screen = Screens.Primary;
         if (screen is null) return;
-        var area = screen.WorkingArea;
-        var width = ChatPanel.IsVisible ? 780 : 460;
-        var height = 716;
-        var right = Position.X + (int)Width;
-        var bottom = Position.Y + (int)Height;
+        var area = screen.Bounds;
+        var width = ChatPanel.IsVisible ? 380 + ModelWidth : ModelWidth;
+        var height = ModelHeight;
         Width = width;
         Height = height;
-        var x = Math.Clamp(right - width, area.X, area.X + area.Width - width);
-        var y = Math.Clamp(bottom - height, area.Y, area.Y + area.Height - height);
+        var x = area.X + area.Width - width;
+        var y = area.Y + area.Height - height;
         Position = new PixelPoint(x, y);
         ApplyCharacterLayout();
     }
+
     private void ApplyWindowMode()
     {
-        var screen = Screens.Primary;
-        if (screen is null) return;
         if (_settings.Fullscreen)
         {
             Topmost = false;
+            var screen = Screens.Primary;
+            if (screen is null) return;
             var scaling = RenderScaling <= 0 ? 1 : RenderScaling;
             Width = screen.Bounds.Width / scaling;
             Height = screen.Bounds.Height / scaling;
             Position = new PixelPoint(screen.Bounds.X, screen.Bounds.Y);
+            ApplyCharacterLayout();
+            return;
         }
-        else
-        {
-            Topmost = false;
-            var area = screen.WorkingArea;
-            var width = ChatPanel.IsVisible ? 780 : 460;
-            var height = 716;
-            Width = width;
-            Height = height;
-            Position = new PixelPoint(area.X + area.Width - width, screen.Bounds.Y + screen.Bounds.Height - height + 6);
-        }
-        ApplyCharacterLayout();
+        Topmost = false;
+        UpdateWindowSize();
     }
+
     private void ApplyCharacterLayout()
     {
-        var baseScale = ChatPanel.IsVisible ? 1.0 : 1.22;
-        var scale = Math.Clamp(_settings.PersonaScale, 0.6, 1.3) * baseScale;
-        CharacterImage.RenderTransform = new ScaleTransform(scale, scale);
-        CharacterFade.RenderTransform = new ScaleTransform(scale, scale);
-        CharacterImage.Margin = new Avalonia.Thickness(0, 0, 10, -Math.Clamp(_settings.PersonaOffset, -100, 200));
-        CharacterFade.Margin = new Avalonia.Thickness(0, 0, 10, -Math.Clamp(_settings.PersonaOffset, -100, 200));
+        CharacterImage.RenderTransform = null;
+        CharacterFade.RenderTransform = null;
+        CharacterImage.Margin = new Avalonia.Thickness(0);
+        CharacterFade.Margin = new Avalonia.Thickness(0);
     }
     private void ApplyAccent()
     {
