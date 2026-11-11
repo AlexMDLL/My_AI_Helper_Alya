@@ -34,14 +34,17 @@ public sealed class MemoryGraph : Control
     private double _targetZoom = 1;
     private Point _targetPan;
     private DispatcherTimer? _timer;
+    private double _time;
+    private double _appear;
+    private GraphNode? _hover;
 
     public event Action<GraphNode?>? SelectionChanged;
 
     public MemoryGraph()
     {
         ClipToBounds = true;
-        _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
-        _timer.Tick += (_, _) => Animate();
+        _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(33) };
+        _timer.Tick += (_, _) => Frame();
         _timer.Start();
     }
 
@@ -77,6 +80,7 @@ public sealed class MemoryGraph : Control
             }
         }
         Layout();
+        _appear = 0;
     }
 
     private void Layout()
@@ -143,7 +147,7 @@ public sealed class MemoryGraph : Control
         foreach (var node in _nodes)
         {
             var center = ToScreen(node.X, node.Y);
-            var radius = (node.Kind == "user" ? 26 : 18) * _zoom;
+            var radius = (node.Kind == "user" ? 22 : 15) * _zoom;
             var dx = point.X - center.X;
             var dy = point.Y - center.Y;
             if (dx * dx + dy * dy <= radius * radius) return node;
@@ -175,7 +179,9 @@ public sealed class MemoryGraph : Control
         foreach (var node in _nodes)
         {
             var center = ToScreen(node.X, node.Y);
-            var radius = (node.Kind == "user" ? 26 : 18) * _zoom;
+            var isHot = ReferenceEquals(node, _selected) || ReferenceEquals(node, _hover);
+            var pulse = 1 + (isHot ? 0.10 : 0.035) * Math.Sin(_time * 2.2 + node.X * 0.05);
+            var radius = (node.Kind == "user" ? 20 : 13) * _zoom * (0.6 + 0.4 * _appear) * pulse;
             var color = node.Kind switch
             {
                 "user" => "#FFD166",
@@ -183,15 +189,15 @@ public sealed class MemoryGraph : Control
                 "rule" => "#FF7B8C",
                 _ => "#2FA8FF"
             };
-            var glow = new SolidColorBrush(Color.Parse(color)) { Opacity = 0.22 };
-            context.DrawEllipse(glow, null, center, radius * 1.8, radius * 1.8);
-            var brush = new SolidColorBrush(Color.Parse(color));
+            var glow = new SolidColorBrush(Color.Parse(color)) { Opacity = (isHot ? 0.38 : 0.20) * _appear };
+            context.DrawEllipse(glow, null, center, radius * (isHot ? 2.1 : 1.7), radius * (isHot ? 2.1 : 1.7));
+            var brush = new SolidColorBrush(Color.Parse(color)) { Opacity = _appear };
             var pen = ReferenceEquals(node, _selected) ? new Pen(Brushes.White, 2) : null;
             context.DrawEllipse(brush, pen, center, radius, radius);
 
             var shortLabel = node.Label.Length > 26 ? node.Label[..26] + "…" : node.Label;
             var text = new FormattedText(shortLabel, CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
-                new Typeface("Segoe UI"), Math.Clamp(10 * _zoom, 8, 15), Brushes.White);
+                new Typeface("Segoe UI"), Math.Clamp(9.5 * _zoom, 8, 13), new SolidColorBrush(Colors.White) { Opacity = _appear });
             context.DrawText(text, new Point(center.X - text.Width / 2, center.Y + radius + 4));
         }
     }
@@ -248,6 +254,12 @@ public sealed class MemoryGraph : Control
         InvalidateVisual();
     }
 
+    private void Frame()
+    {
+        _time += 0.033;
+        if (_appear < 1) _appear = Math.Min(1, _appear + 0.06);
+        InvalidateVisual();
+    }
     private void Animate()
     {
         if (_zoomTarget is null) return;
