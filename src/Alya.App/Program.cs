@@ -3,12 +3,13 @@ using Alya.System;
 using Alya.Voice;
 
 var system = new WindowsSystemController();
-ITtsService tts = new SileroTtsService();
+using var sidecar = new SileroSidecarTtsService();
+ITtsService tts = sidecar.Available ? sidecar : new SileroTtsService();
 IAsrService asr = new SherpaAsrService();
 
 Console.OutputEncoding = System.Text.Encoding.UTF8;
 Console.WriteLine($"=== {AlyaInfo.Name} {AlyaInfo.Version} (C# host) ===");
-Console.WriteLine("Ядро: C# · Голос: заглушка Silero · Система: Windows");
+Console.WriteLine($"Ядро: C# · Голос: {(sidecar.Available ? "Silero (сайдкар)" : "заглушка")} · Система: Windows");
 Console.WriteLine($"Фокус сейчас: {system.ForegroundProcess() ?? "неизвестно"}");
 Console.WriteLine("Команды: say <текст> | open <программа> | close <программа> | volume <app> <0-100> | listen | quit");
 Console.WriteLine();
@@ -20,8 +21,15 @@ while (true)
     if (line is null) break;
     var text = line.Trim();
     if (text.Length == 0) continue;
+    Console.WriteLine($"[cmd] {text}");
 
     if (text is "quit" or "exit" or "выход") break;
+
+    if (text == "wait")
+    {
+        await Task.Delay(15000);
+        continue;
+    }
 
     if (text == "listen")
     {
@@ -70,3 +78,5 @@ while (true)
 
     await tts.SpeakAsync($"Пока я умею немного. Ты сказал: {text}", "shy");
 }
+
+await Task.Delay(4000);
