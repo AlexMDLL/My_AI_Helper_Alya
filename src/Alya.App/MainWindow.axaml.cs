@@ -31,6 +31,12 @@ public partial class MainWindow : Window
     private readonly object _cacheLock = new();
     private DispatcherTimer? _animTimer;
     private DispatcherTimer? _gestureTimer;
+    private DispatcherTimer? _fallTimer;
+    private bool _dragging;
+    private Point _dragOffset;
+    private double _fallY;
+    private double _fallVelocity;
+    private int _fallX;
     private readonly ObservableCollection<Bubble> _messages = new();
     private TrayIcon? _tray;
 
@@ -49,6 +55,37 @@ public partial class MainWindow : Window
             }
         };
         CloseButton.Click += (_, _) => Hide();
+        CharacterImage.PointerPressed += (_, args) =>
+        {
+            var point = args.GetCurrentPoint(CharacterImage);
+            if (!point.Properties.IsLeftButtonPressed) return;
+            _dragging = true;
+            var screen = ScreenPoint(args.GetPosition(CharacterImage));
+            _dragOffset = new Point(screen.X - Position.X, screen.Y - Position.Y);
+            args.Pointer.Capture(CharacterImage);
+            if (_fallTimer is not null)
+            {
+                _fallTimer.Stop();
+                _fallTimer = null;
+            }
+        };
+
+        CharacterImage.PointerMoved += (_, args) =>
+        {
+            if (!_dragging) return;
+            var screen = ScreenPoint(args.GetPosition(CharacterImage));
+            Position = new PixelPoint(
+                (int)Math.Round(screen.X - _dragOffset.X),
+                (int)Math.Round(screen.Y - _dragOffset.Y));
+        };
+
+        CharacterImage.PointerReleased += (_, _) =>
+        {
+            if (!_dragging) return;
+            _dragging = false;
+            StartFall();
+        };
+
 
         Opened += (_, _) =>
         {
@@ -221,6 +258,48 @@ public partial class MainWindow : Window
         });
     }
 
+    private Point ScreenPoint(Point local)
+    {
+        var offset = CharacterImage.TranslatePoint(new Point(0, 0), this) ?? new Point(0, 0);
+        return new Point(
+            Position.X + (offset.X + local.X) * RenderScaling,
+            Position.Y + (offset.Y + local.Y) * RenderScaling);
+    }
+    private void StartFall()
+    {
+        if (Screens.Primary is null) return;
+        var area = Screens.Primary.WorkingArea;
+        _fallX = Math.Clamp(Position.X, area.X, area.X + area.Width - (int)Width);
+        var floor = area.Y + area.Height - (int)Height - 4;
+        _fallY = Position.Y;
+        if (_fallY >= floor)
+        {
+            Position = new PixelPoint(_fallX, floor);
+            return;
+        }
+        _fallVelocity = 0;
+        _fallTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(8) };
+        _fallTimer.Tick += (_, _) =>
+        {
+            _fallVelocity += 1.2;
+            _fallY += _fallVelocity;
+            if (_fallY >= floor)
+            {
+                _fallY = floor;
+                _fallVelocity = -_fallVelocity * 0.32;
+                if (Math.Abs(_fallVelocity) < 1.6)
+                {
+                    if (_fallTimer is not null)
+                    {
+                        _fallTimer.Stop();
+                        _fallTimer = null;
+                    }
+                }
+            }
+            Position = new PixelPoint(_fallX, (int)Math.Round(_fallY));
+        };
+        _fallTimer.Start();
+    }
     private void ShowWindow()
     {
         Show();
