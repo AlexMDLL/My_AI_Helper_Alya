@@ -94,6 +94,7 @@ public partial class MainWindow : Window
         _llm = new OllamaLlmClient(_settings.Model);
         _tts.Speaker = _settings.Speaker;
         _tts.Pitch = _settings.Pitch;
+        _tts.OnEvent += kind => Dispatcher.UIThread.Post(() => HandleVoiceEvent(kind));
         _llm.ExtraContext = _memory.ToPrompt();
         MessagesList.ItemsSource = _messages;
         try
@@ -476,15 +477,21 @@ public partial class MainWindow : Window
 
     private async Task SpeakAndReturn(string phrase)
     {
-        try
+        await _tts.SpeakAsync(phrase, "neutral");
+    }
+    private void HandleVoiceEvent(string kind)
+    {
+        if (kind == "tts_start")
         {
-            await _tts.SpeakAsync(phrase, "neutral");
-            await Task.Delay(Math.Clamp(phrase.Length * 65, 1200, 8000));
+            _talking = true;
+            PlayScene("VideoTalk");
+            StatusText.Text = "говорит…";
         }
-        finally
+        else if (kind == "tts_end")
         {
             _talking = false;
             PlayScene("VideoStand");
+            StatusText.Text = "на связи";
         }
     }
     private void AnimateEntrance()
@@ -711,22 +718,7 @@ public partial class MainWindow : Window
         HistoryStore.Save(_history);
         Add("alya", reply);
         StatusText.Text = "говорит…";
-        try
-        {
-            _talking = true;
-            StatusText.Text = "говорит…";
-            await _tts.SpeakAsync(reply, "neutral");
-            await Task.Delay(500);
-            PlayScene("VideoTalk");
-            var duration = Math.Clamp(reply.Length * 65, 1200, 12000);
-            await Task.Delay(duration);
-        }
-        finally
-        {
-            _talking = false;
-            PlayScene("VideoStand");
-            StatusText.Text = "на связи";
-        }
+        await _tts.SpeakAsync(reply, "neutral");
     }
 
     private void Add(string role, string text)

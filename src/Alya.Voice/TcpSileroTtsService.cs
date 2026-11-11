@@ -35,6 +35,7 @@ public sealed class TcpSileroTtsService : ITtsService, IDisposable
     }
 
     public bool Available => File.Exists(_bridge) && File.Exists(_python);
+    public event Action<string>? OnEvent;
     public string Speaker { get; set; } = "xenia";
     public double Pitch { get; set; } = 0.97;
 
@@ -67,17 +68,16 @@ public sealed class TcpSileroTtsService : ITtsService, IDisposable
             for (var attempt = 0; attempt < 2; attempt++)
             {
                 EnsureConnected();
-                if (_writer is null || _reader is null) return;
+                if (_writer is null) return;
                 try
                 {
                     _writer.WriteLine(payload);
                     _writer.Flush();
-                    var ack = _reader.ReadLine();
-                    if (!string.IsNullOrEmpty(ack)) return;
+                    return;
                 }
                 catch
                 {
-                    // мост не ответил — переподключаемся и пробуем ещё раз
+                    // мост не принял команду — переподключаемся и пробуем ещё раз
                 }
                 Close();
                 Thread.Sleep(200);
@@ -85,6 +85,34 @@ public sealed class TcpSileroTtsService : ITtsService, IDisposable
         }
     }
 
+    private void ReadEvents(StreamReader reader)
+    {
+        try
+        {
+            while (true)
+            {
+                var line = reader.ReadLine();
+                if (line is null) break;
+                if (line.Length == 0 || !line.Contains("\"event\"")) continue;
+                try
+                {
+                    using var document = JsonDocument.Parse(line);
+                    if (document.RootElement.TryGetProperty("event", out var value))
+                    {
+                        OnEvent?.Invoke(value.GetString() ?? string.Empty);
+                    }
+                }
+                catch
+                {
+                    // некорректная строка события
+                }
+            }
+        }
+        catch
+        {
+            // соединение закрыто
+        }
+    }
     private void EnsureConnected()
     {
         if (_client is { Connected: true } && _writer is not null) return;
@@ -100,6 +128,9 @@ public sealed class TcpSileroTtsService : ITtsService, IDisposable
                 var stream = _client.GetStream();
                 _writer = new StreamWriter(stream, new UTF8Encoding(false)) { AutoFlush = false };
                 _reader = new StreamReader(stream, new UTF8Encoding(false));
+                var reader = _reader;
+                var thread = new Thread(() => ReadEvents(reader)) { IsBackground = true };
+                thread.Start();
                 return;
             }
             catch
