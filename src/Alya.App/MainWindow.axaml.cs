@@ -90,6 +90,9 @@ public partial class MainWindow : Window
     [DllImport("user32.dll", EntryPoint = "SetWindowLongPtrW")]
     private static extern IntPtr SetWindowLongPtr(IntPtr hWnd, int index, IntPtr value);
 
+    [DllImport("user32.dll")]
+    private static extern bool SetWindowPos(IntPtr hWnd, IntPtr insertAfter, int x, int y, int cx, int cy, uint flags);
+
     [StructLayout(LayoutKind.Sequential)]
     private struct POINT
     {
@@ -781,6 +784,8 @@ public partial class MainWindow : Window
         var style = GetWindowLongPtr(_hwnd, GwlExStyle).ToInt64();
         var updated = enabled ? style | WsExTransparent | WsExNoActivate : style & ~WsExTransparent & ~WsExNoActivate;
         SetWindowLongPtr(_hwnd, GwlExStyle, new IntPtr(updated));
+        const uint SwpNoMove = 0x0002, SwpNoSize = 0x0001, SwpNoZOrder = 0x0004, SwpFrameChanged = 0x0020, SwpNoActivate = 0x0010;
+        SetWindowPos(_hwnd, IntPtr.Zero, 0, 0, 0, 0, SwpNoMove | SwpNoSize | SwpNoZOrder | SwpFrameChanged | SwpNoActivate);
     }
     private void OpenSettings()
     {
