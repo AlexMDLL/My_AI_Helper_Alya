@@ -807,10 +807,9 @@ public partial class MainWindow : Window
         {
             Topmost = false;
             var scaling = RenderScaling <= 0 ? 1 : RenderScaling;
-            var work = screen.WorkingArea;
-            Width = work.Width / scaling;
-            Height = work.Height / scaling;
-            Position = new PixelPoint(work.X, work.Y);
+            Width = screen.Bounds.Width / scaling;
+            Height = screen.Bounds.Height / scaling;
+            Position = new PixelPoint(screen.Bounds.X, screen.Bounds.Y);
         }
         else
         {
