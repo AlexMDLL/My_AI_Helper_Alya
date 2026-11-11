@@ -704,7 +704,7 @@ public partial class MainWindow : Window
             if (hallu.Any(text.Contains)) return;
             var lower = text.ToLowerInvariant();
             var hasWake = lower.Contains("алл") || lower.Contains("аля") || lower.Contains("алю") || lower.Contains("але") || lower.Contains("ало") || lower.Contains("оля") || lower.Contains("алекс") || lower.Contains("али");
-            if (!_settings.AlwaysListen && !hasWake) return;
+            if (!_settings.PushToTalk && !_settings.AlwaysListen && !hasWake) return;
             var cleaned = Regex.Replace(text, @"(?i)\b(аля|алла|алле|алло|алли|алю|але|ало|оля|али)\b[\s,!\.\?]*", " ").Trim();
             if (cleaned.Length < 2) return;
             InputBox.Text = cleaned;
