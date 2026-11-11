@@ -293,14 +293,7 @@ public partial class MainWindow : Window
         _animTimer.Tick += (_, _) => Tick();
         _animTimer.Start();
 
-        _gestureTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
-        _gestureTimer.Tick += (_, _) =>
-        {
-            if (_talking || !_scene.Equals("VideoStand", StringComparison.OrdinalIgnoreCase)) return;
-            var gestures = new[] { "VideoWink", "VideoDeny", "VideoSurprise", "VideoShyJoy" };
-            PlayScene(gestures[Random.Shared.Next(gestures.Length)], oneShot: true);
-        };
-        _gestureTimer.Start();
+
     }
 
     private void PlayScene(string name, bool oneShot = false)
