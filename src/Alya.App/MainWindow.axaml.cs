@@ -55,6 +55,7 @@ public partial class MainWindow : Window
     private DateTime _talkingStarted;
     private DispatcherTimer? _pttTimer;
     private bool _pttDown;
+    private DispatcherTimer? _pttResetTimer;
     private DateTime _lastActivity = DateTime.Now;
     private DispatcherTimer? _hideTimer;
     private DispatcherTimer? _bubbleTimer;
@@ -186,6 +187,14 @@ public partial class MainWindow : Window
                 _pttDown = false;
                 _voiceInput.EndPushToTalk();
                 StatusText.Text = "думает…";
+                _pttResetTimer?.Stop();
+                _pttResetTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(9) };
+                _pttResetTimer.Tick += (_, _) =>
+                {
+                    _pttResetTimer?.Stop();
+                    if (StatusText.Text == "думает…") StatusText.Text = "на связи";
+                };
+                _pttResetTimer.Start();
             }
         };
         _pttTimer.Start();
