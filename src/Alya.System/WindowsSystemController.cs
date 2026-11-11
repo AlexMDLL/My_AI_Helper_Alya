@@ -78,6 +78,48 @@ public sealed class WindowsSystemController : Alya.Core.ISystemController
         ["спотифай"] = "spotify"
     };
 
+    private static bool TryKnownApp(string name, out bool started)
+    {
+        started = false;
+        try
+        {
+            switch (name.ToLowerInvariant())
+            {
+                case "steam":
+                    var steam = @"C:\Program Files (x86)\Steam\steam.exe";
+                    if (!File.Exists(steam)) steam = @"C:\Program Files\Steam\steam.exe";
+                    if (File.Exists(steam))
+                    {
+                        Start(steam);
+                        started = true;
+                    }
+                    else
+                    {
+                        Start("steam://open/main");
+                        started = true;
+                    }
+                    return true;
+                case "telegram":
+                    var tg = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Telegram Desktop", "Telegram.exe");
+                    if (File.Exists(tg)) { Start(tg); started = true; return true; }
+                    return false;
+                case "discord":
+                    var discord = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Discord", "Update.exe");
+                    if (File.Exists(discord))
+                    {
+                        Process.Start(new ProcessStartInfo(discord, "--processStart Discord.exe") { UseShellExecute = true });
+                        started = true;
+                        return true;
+                    }
+                    return false;
+            }
+        }
+        catch
+        {
+            // ignore
+        }
+        return false;
+    }
     public bool Launch(string target)
     {
         try
@@ -90,6 +132,7 @@ public sealed class WindowsSystemController : Alya.Core.ISystemController
                 return true;
             }
 
+            if (TryKnownApp(name, out var knownStarted) && knownStarted) return true;
             var known = Process.GetProcessesByName(name).FirstOrDefault();
             if (known is not null)
             {

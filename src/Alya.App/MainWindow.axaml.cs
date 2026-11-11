@@ -1077,7 +1077,6 @@ public partial class MainWindow : Window
     {
         var isUser = role == "user";
         _lastActivity = DateTime.Now;
-        SetChatVisible(true);
         if (!isUser && _settings.Bubbles && text.Length < 160) ShowBubble(text);
         var bubble = new Bubble
         {
