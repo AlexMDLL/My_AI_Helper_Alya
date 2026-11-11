@@ -23,7 +23,9 @@ public partial class MainWindow : Window
     private readonly WindowsSystemController _system = new();
     private readonly SteamLibrary _steam = new();
     private readonly MemoryStore _memory = MemoryStore.Load();
-    private readonly TcpSileroTtsService _tts = new();
+    private readonly TcpSileroTtsService _silero = new();
+    private readonly SapiTtsService _sapi = new();
+    private ITtsService _tts => _silero.Available ? _silero : _sapi;
     private OllamaLlmClient _llm = new();
     private AlyaSettings _settings = new();
     private readonly List<ChatMessage> _history = new();
@@ -92,9 +94,10 @@ public partial class MainWindow : Window
         InitializeComponent();
         _settings = AlyaSettings.Load();
         _llm = new OllamaLlmClient(_settings.Model);
-        _tts.Speaker = _settings.Speaker;
-        _tts.Pitch = _settings.Pitch;
-        _tts.OnEvent += kind => Dispatcher.UIThread.Post(() => HandleVoiceEvent(kind));
+        _silero.Speaker = _settings.Speaker;
+        _silero.Pitch = _settings.Pitch;
+        _silero.OnEvent += kind => Dispatcher.UIThread.Post(() => HandleVoiceEvent(kind));
+        _sapi.OnEvent += kind => Dispatcher.UIThread.Post(() => HandleVoiceEvent(kind));
         _llm.ExtraContext = _memory.ToPrompt();
         MessagesList.ItemsSource = _messages;
         try
@@ -172,7 +175,7 @@ public partial class MainWindow : Window
         {
             var screen = Screens.Primary?.WorkingArea ?? new PixelRect(0, 0, 1920, 1080);
             Position = new PixelPoint(screen.X + screen.Width - 800, screen.Y + 60);
-            StatusText.Text = $"голос: {(_tts.Available ? "Silero" : "нет")}";
+            StatusText.Text = $"голос: {(_silero.Available ? "Silero" : "Windows")}";
             LoadCharacter();
             CreateTray();
             AnimateEntrance();
@@ -639,8 +642,8 @@ public partial class MainWindow : Window
     {
         var previousModel = _settings.Model;
         _settings = AlyaSettings.Load();
-        _tts.Speaker = _settings.Speaker;
-        _tts.Pitch = _settings.Pitch;
+        _silero.Speaker = _settings.Speaker;
+        _silero.Pitch = _settings.Pitch;
         if (!string.Equals(previousModel, _settings.Model, StringComparison.OrdinalIgnoreCase))
         {
             _llm = new OllamaLlmClient(_settings.Model);
