@@ -95,8 +95,19 @@ public sealed class MemoryGraph : Control
         {
             var centerX = _nodes.Average(n => n.X);
             var centerY = _nodes.Average(n => n.Y);
-            city.X = centerX + (city.X - centerX) * 0.45;
-            city.Y = centerY + (city.Y - centerY) * 0.45;
+            city.X = centerX + (city.X - centerX) * 0.85;
+            city.Y = centerY + (city.Y - centerY) * 0.85;
+            if (user is not null)
+            {
+                var dx = city.X - user.X;
+                var dy = city.Y - user.Y;
+                var distance = Math.Max(1, Math.Sqrt(dx * dx + dy * dy));
+                if (distance < 100)
+                {
+                    city.X = user.X + dx / distance * 100;
+                    city.Y = user.Y + dy / distance * 100;
+                }
+            }
         }
         _centroid = new Point(_nodes.Average(n => n.X), _nodes.Average(n => n.Y));
         _centered = false;
