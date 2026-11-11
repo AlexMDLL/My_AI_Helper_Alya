@@ -58,7 +58,12 @@ while (true)
         if (parts.Length >= 3 && int.TryParse(parts[2], out var percent))
         {
             var value = system.SetAppVolume(parts[1], percent);
-            Console.WriteLine($"[volume] {parts[1]} = {value}%");
+            Console.WriteLine(value < 0 ? $"[volume] {parts[1]}: активной сессии нет" : $"[volume] {parts[1]} = {value}%");
+        }
+        else if (parts.Length == 2)
+        {
+            var value = system.GetAppVolume(parts[1]);
+            Console.WriteLine(value < 0 ? $"[volume] {parts[1]}: активной сессии нет" : $"[volume] {parts[1]} = {value}%");
         }
         continue;
     }
