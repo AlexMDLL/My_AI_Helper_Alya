@@ -21,6 +21,7 @@ public sealed class AlyaSettings
     public bool FallEnabled { get; set; } = true;
     public bool PetEnabled { get; set; } = true;
     public bool AlwaysListen { get; set; } = true;
+    public bool PushToTalk { get; set; } = true;
     public bool Fullscreen { get; set; } = false;
     public bool AlwaysOnTop { get; set; } = true;
     public bool HideInGames { get; set; } = false;

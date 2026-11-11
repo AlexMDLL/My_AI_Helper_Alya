@@ -1,0 +1,37 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Alya.App.MemoryWindow"
+        Title="Память Али"
+        Width="460" Height="560"
+        CanResize="False"
+        SystemDecorations="None"
+        TransparencyLevelHint="Transparent"
+        Background="Transparent"
+        WindowStartupLocation="CenterOwner">
+  <Border CornerRadius="18" Background="#F20D1522" BorderBrush="#33A7D8FF" BorderThickness="1" Margin="0">
+    <Grid RowDefinitions="Auto,*,Auto">
+      <Border Padding="16,12" Background="#331E3348" CornerRadius="18,18,0,0">
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel>
+            <TextBlock Text="ПАМЯТЬ АЛИ" FontSize="13" FontWeight="SemiBold" Foreground="#EAF4FF" LetterSpacing="2"/>
+            <TextBlock Text="что она запомнила и какие связи выстроила" FontSize="10" Foreground="#7F93AA"/>
+          </StackPanel>
+          <Button Grid.Column="1" x:Name="CloseButton" Content="✕" Background="Transparent" Foreground="#8EA4BD" BorderThickness="0"/>
+        </Grid>
+      </Border>
+      <ScrollViewer Grid.Row="1" Margin="16,12">
+        <StackPanel Spacing="10">
+          <TextBlock Text="Факты" Foreground="#5EEAD4" FontSize="12" FontWeight="SemiBold"/>
+          <TextBlock x:Name="FactsText" Text="—" TextWrapping="Wrap" Foreground="#E6EDF5" FontSize="12.5"/>
+          <TextBlock Text="Правила" Foreground="#5EEAD4" FontSize="12" FontWeight="SemiBold" Margin="0,8,0,0"/>
+          <TextBlock x:Name="RulesText" Text="—" TextWrapping="Wrap" Foreground="#E6EDF5" FontSize="12.5"/>
+          <TextBlock Text="Связи" Foreground="#5EEAD4" FontSize="12" FontWeight="SemiBold" Margin="0,8,0,0"/>
+          <TextBlock x:Name="LinksText" Text="—" TextWrapping="Wrap" Foreground="#9FB2C9" FontSize="12"/>
+        </StackPanel>
+      </ScrollViewer>
+      <Border Grid.Row="2" Padding="14,10" Background="#111C2B" CornerRadius="0,0,18,18">
+        <Button x:Name="RefreshButton" Content="Обновить" Classes="primary" HorizontalAlignment="Left"/>
+      </Border>
+    </Grid>
+  </Border>
+</Window>

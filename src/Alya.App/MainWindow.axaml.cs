@@ -53,6 +53,8 @@ public partial class MainWindow : Window
     private string? _pendingPower;
     private DateTime _pendingPowerAt;
     private DateTime _talkingStarted;
+    private DispatcherTimer? _pttTimer;
+    private bool _pttDown;
     private DateTime _lastActivity = DateTime.Now;
     private DispatcherTimer? _hideTimer;
     private DispatcherTimer? _bubbleTimer;
@@ -88,6 +90,9 @@ public partial class MainWindow : Window
     private DispatcherTimer? _clickTimer;
     private bool _clickThrough;
     private IntPtr _hwnd;
+
+    [DllImport("user32.dll")]
+    private static extern short GetAsyncKeyState(int key);
 
     [DllImport("user32.dll")]
     private static extern bool GetCursorPos(out POINT point);
@@ -164,6 +169,25 @@ public partial class MainWindow : Window
             PlayScene("VideoStand");
         };
         talkWatchdog.Start();
+        _pttTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(60) };
+        _pttTimer.Tick += (_, _) =>
+        {
+            if (!_settings.PushToTalk) return;
+            var pressed = (GetAsyncKeyState(0x77) & 0x8000) != 0;
+            if (pressed && !_pttDown)
+            {
+                _pttDown = true;
+                _voiceInput.BeginPushToTalk();
+                StatusText.Text = "слушаю…";
+            }
+            else if (!pressed && _pttDown)
+            {
+                _pttDown = false;
+                _voiceInput.EndPushToTalk();
+                StatusText.Text = "думает…";
+            }
+        };
+        _pttTimer.Start();
         _hideTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _hideTimer.Tick += (_, _) =>
         {
@@ -311,6 +335,8 @@ public partial class MainWindow : Window
         {
             if (args.InitialPressMouseButton != MouseButton.Right) return;
             var menu = new ContextMenu();
+            var memoryItem = new MenuItem { Header = "Её память" };
+            memoryItem.Click += (_, _) => OpenMemory();
             var settings = new MenuItem { Header = "Настройки" };
             settings.Click += (_, _) => OpenSettings();
             var chat = new MenuItem { Header = ChatPanel.IsVisible ? "Скрыть чат" : "Показать чат" };
@@ -368,6 +394,7 @@ public partial class MainWindow : Window
             lockDrag.Click += (_, _) => _lockDrag = !_lockDrag;
             var exit = new MenuItem { Header = "Выход" };
             exit.Click += (_, _) => Close();
+            menu.Items.Add(memoryItem);
             menu.Items.Add(settings);
             menu.Items.Add(chat);
             menu.Items.Add(new Separator());
@@ -407,7 +434,7 @@ public partial class MainWindow : Window
             StatusText.Text = $"голос: {(_silero.Available ? "Silero" : _piper.Available ? "Piper" : "Windows")}";
             LoadCharacter();
             _voiceInput.TextRecognized += OnVoiceText;
-            _voiceInput.Start();
+            if (!_settings.PushToTalk) _voiceInput.Start();
         global::System.Threading.Tasks.Task.Run(async () =>
         {
             try
@@ -1039,6 +1066,11 @@ public partial class MainWindow : Window
         SetWindowLongPtr(_hwnd, GwlExStyle, new IntPtr(updated));
         const uint SwpNoMove = 0x0002, SwpNoSize = 0x0001, SwpNoZOrder = 0x0004, SwpFrameChanged = 0x0020, SwpNoActivate = 0x0010;
         SetWindowPos(_hwnd, IntPtr.Zero, 0, 0, 0, 0, SwpNoMove | SwpNoSize | SwpNoZOrder | SwpFrameChanged | SwpNoActivate);
+    }
+    private void OpenMemory()
+    {
+        var window = new MemoryWindow();
+        window.Show(this);
     }
     private void OpenSettings()
     {

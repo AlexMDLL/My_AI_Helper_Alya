@@ -20,6 +20,7 @@ public sealed class VoiceInputService : IDisposable
     private DateTime _lastUsed = DateTime.MinValue;
     private DispatcherTimer? _idleTimer;
     private readonly object _processorGate = new();
+    private bool _pushToTalk;
     private int _sampleRate = 16000;
 
     public event Action<string>? TextRecognized;
@@ -110,8 +111,39 @@ public sealed class VoiceInputService : IDisposable
         ListeningChanged?.Invoke(false);
     }
 
+    public void BeginPushToTalk()
+    {
+        lock (_gate)
+        {
+            _buffer.SetLength(0);
+            _pushToTalk = true;
+            _hadSpeech = true;
+            _lastUsed = DateTime.Now;
+        }
+        try { _wave.StartRecording(); } catch { }
+    }
+
+    public void EndPushToTalk()
+    {
+        byte[] audio;
+        lock (_gate)
+        {
+            _pushToTalk = false;
+            audio = _buffer.ToArray();
+            _buffer.SetLength(0);
+        }
+        try { _wave.StopRecording(); } catch { }
+        if (audio.Length < _sampleRate * 2 * 0.3) return;
+        _ = Task.Run(() => Transcribe(audio));
+    }
+
     private void OnData(object? sender, WaveInEventArgs args)
     {
+        if (_pushToTalk)
+        {
+            lock (_gate) _buffer.Write(args.Buffer, 0, args.BytesRecorded);
+            return;
+        }
         var chunk = new byte[args.BytesRecorded];
         Array.Copy(args.Buffer, chunk, args.BytesRecorded);
         var level = Rms(chunk);
