@@ -40,6 +40,8 @@ public sealed class MemoryGraph : Control
     private bool _autoZoomed;
     private bool _centered;
     private Point _centroid;
+    private bool _returning;
+    private Point _returnTarget;
 
     public event Action<GraphNode?>? SelectionChanged;
 
@@ -252,6 +254,7 @@ public sealed class MemoryGraph : Control
             SelectionChanged?.Invoke(node);
             _zoomTarget = node;
             _targetZoom = 1.9;
+            _returning = false;
             _timer?.Start();
         }
         else
@@ -280,6 +283,7 @@ public sealed class MemoryGraph : Control
         base.OnPointerReleased(e);
         _dragging = false;
         e.Pointer.Capture(null);
+        CheckRecenter();
     }
 
     protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
@@ -292,6 +296,7 @@ public sealed class MemoryGraph : Control
             point.X - (point.X - _pan.X) * (_zoom / oldZoom),
             point.Y - (point.Y - _pan.Y) * (_zoom / oldZoom));
         _zoomTarget = null;
+        CheckRecenter();
         InvalidateVisual();
     }
 
@@ -300,7 +305,29 @@ public sealed class MemoryGraph : Control
         _time += 0.033;
         if (_appear < 1) _appear = Math.Min(1, _appear + 0.06);
         if (_zoomTarget is not null) AnimateZoom();
+        if (_returning) ReturnToCenter();
         InvalidateVisual();
+    }
+    private void ReturnToCenter()
+    {
+        var target = new Point(Bounds.Width / 2 - _centroid.X * _zoom, Bounds.Height / 2 - _centroid.Y * _zoom);
+        _pan += (target - _pan) * 0.10;
+        if (Math.Abs(target.X - _pan.X) + Math.Abs(target.Y - _pan.Y) < 1)
+        {
+            _pan = target;
+            _returning = false;
+        }
+    }
+
+    private void CheckRecenter()
+    {
+        if (_nodes.Count == 0 || Bounds.Width < 10) return;
+        var centroidScreen = ToScreen(_centroid.X, _centroid.Y);
+        if (Math.Abs(centroidScreen.X - Bounds.Width / 2) > 70 || Math.Abs(centroidScreen.Y - Bounds.Height / 2) > 70)
+        {
+            _returnTarget = new Point(Bounds.Width / 2 - _centroid.X * _zoom, Bounds.Height / 2 - _centroid.Y * _zoom);
+            _returning = true;
+        }
     }
     private void AnimateZoom()
     {
