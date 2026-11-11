@@ -6,6 +6,7 @@ public sealed class AlyaSettings
 {
     public string Model { get; set; } = "qwen2.5:7b-instruct";
     public string City { get; set; } = "Сыктывкар";
+    public string UserName { get; set; } = "Александр";
     public string Persona { get; set; } = "Ты — Аля, живая спутница на ПК. Говори по-русски, коротко и живо, с лёгкой вредностью, но по-доброму.";
     public string Speaker { get; set; } = "xenia";
     public double Pitch { get; set; } = 1.2;

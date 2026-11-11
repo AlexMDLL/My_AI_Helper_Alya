@@ -129,6 +129,10 @@
             <TextBox x:Name="PersonaBox" AcceptsReturn="True" Height="150" TextWrapping="Wrap"
                      Watermark="Опиши, какая она: тон, манера речи, что любит…"/>
             <TextBlock Text="Это описание подмешивается в системный промпт." Classes="hint" Margin="0,6,0,0"/>
+            <TextBlock Text="Имя пользователя" Classes="label"/>
+            <TextBox x:Name="UserNameBox" Watermark="Александр"/>
+            <TextBlock Text="Город" Classes="label"/>
+            <TextBox x:Name="CityBox" Watermark="Сыктывкар"/>
           </StackPanel>
 
           <StackPanel x:Name="PanelBrain" Spacing="4" IsVisible="False">

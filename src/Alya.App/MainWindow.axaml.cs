@@ -136,7 +136,7 @@ public partial class MainWindow : Window
         _silero.OnEvent += kind => Dispatcher.UIThread.Post(() => HandleVoiceEvent(kind));
         _sapi.OnEvent += kind => Dispatcher.UIThread.Post(() => HandleVoiceEvent(kind));
         _piper.OnEvent += kind => Dispatcher.UIThread.Post(() => HandleVoiceEvent(kind));
-        _llm.ExtraContext = _memory.ToPrompt();
+        _llm.ExtraContext = BuildContext();
         ApplyAccent();
         ApplyWindowMode();
         Opacity = Math.Clamp(_settings.Opacity, 0.6, 1);
@@ -1026,7 +1026,7 @@ public partial class MainWindow : Window
             var fact = Regex.Replace(value, "^запомни,?\\s*(что\\s+)?", string.Empty, RegexOptions.IgnoreCase).Trim();
             if (fact.Length == 0) return "Что запомнить-то?";
             _memory.AddFact(fact);
-            _llm.ExtraContext = _memory.ToPrompt();
+            _llm.ExtraContext = BuildContext();
         ApplyAccent();
         ApplyWindowMode();
         Opacity = Math.Clamp(_settings.Opacity, 0.6, 1);
@@ -1037,7 +1037,7 @@ public partial class MainWindow : Window
             var rule = Regex.Replace(value, "^правило\\s*:?\\s*", string.Empty, RegexOptions.IgnoreCase).Trim();
             if (rule.Length == 0) return "Какое правило?";
             _memory.AddRule(rule);
-            _llm.ExtraContext = _memory.ToPrompt();
+            _llm.ExtraContext = BuildContext();
         ApplyAccent();
         ApplyWindowMode();
         Opacity = Math.Clamp(_settings.Opacity, 0.6, 1);
@@ -1351,6 +1351,12 @@ public partial class MainWindow : Window
         CharacterFade.RenderTransform = null;
         CharacterImage.Margin = new Avalonia.Thickness(0);
         CharacterFade.Margin = new Avalonia.Thickness(0);
+    }
+    private string BuildContext()
+    {
+        var profile = $"Пользователя зовут {_settings.UserName}, его город — {_settings.City}.";
+        var memory = _memory.ToPrompt();
+        return string.IsNullOrWhiteSpace(memory) ? profile : profile + " " + memory;
     }
     private void ApplyAccent()
     {
