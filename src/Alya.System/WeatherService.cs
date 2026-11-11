@@ -39,6 +39,33 @@ public sealed class WeatherService
         }
     }
 
+    public async Task<string?> GetTomorrowAsync(string city, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var geoUrl = $"https://geocoding-api.open-meteo.com/v1/search?name={Uri.EscapeDataString(city)}&count=1&language=ru&format=json";
+            using var geo = JsonDocument.Parse(await Http.GetStringAsync(geoUrl, cancellationToken));
+            if (!geo.RootElement.TryGetProperty("results", out var results) || results.GetArrayLength() == 0) return null;
+            var place = results[0];
+            var name = place.GetProperty("name").GetString() ?? city;
+            var latitude = place.GetProperty("latitude").GetDouble();
+            var longitude = place.GetProperty("longitude").GetDouble();
+            var url = $"https://api.open-meteo.com/v1/forecast?latitude={latitude.ToString(global::System.Globalization.CultureInfo.InvariantCulture)}" +
+                      $"&longitude={longitude.ToString(global::System.Globalization.CultureInfo.InvariantCulture)}" +
+                      "&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_probability_max&forecast_days=2&timezone=auto";
+            using var forecast = JsonDocument.Parse(await Http.GetStringAsync(url, cancellationToken));
+            var daily = forecast.RootElement.GetProperty("daily");
+            var max = daily.GetProperty("temperature_2m_max")[1].GetDouble();
+            var min = daily.GetProperty("temperature_2m_min")[1].GetDouble();
+            var code = daily.GetProperty("weather_code")[1].GetInt32();
+            var precipitation = daily.GetProperty("precipitation_probability_max")[1].GetDouble();
+            return $"Завтра в {name}: от {Math.Round(min)}° до {Math.Round(max)}°, {Describe(code)}, вероятность осадков {Math.Round(precipitation)}%.";
+        }
+        catch
+        {
+            return null;
+        }
+    }
     private static string Describe(int code) => code switch
     {
         0 => "ясно",

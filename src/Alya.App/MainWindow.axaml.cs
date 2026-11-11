@@ -717,7 +717,7 @@ public partial class MainWindow : Window
         {
             city = match.Groups[1].Value;
         }
-        var weather = await _weather.GetAsync(city);
+        var weather = lower.Contains("завтра") ? await _weather.GetTomorrowAsync(city) : await _weather.GetAsync(city);
         if (weather is null && !string.Equals(city, _settings.City, StringComparison.OrdinalIgnoreCase))
         {
             weather = await _weather.GetAsync(_settings.City);
