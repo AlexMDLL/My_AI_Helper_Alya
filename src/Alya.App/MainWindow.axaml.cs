@@ -137,7 +137,7 @@ public partial class MainWindow : Window
         var taskbarTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         taskbarTimer.Tick += (_, _) =>
         {
-            if (_dragging || Screens.Primary is null) return;
+            if (_settings.Fullscreen || _dragging || Screens.Primary is null) return;
             var work = Screens.Primary.WorkingArea;
             var floor = work.Y + work.Height - (int)Height + Math.Clamp(_settings.PersonaOffset, -100, 200);
             if (Math.Abs(Position.Y - floor) > 120) return;
@@ -774,10 +774,12 @@ public partial class MainWindow : Window
     {
         if (_hwnd == IntPtr.Zero || enabled == _clickThrough) return;
         _clickThrough = enabled;
+        try { File.AppendAllText(Path.Combine(Path.GetTempPath(), "alya-click.log"), $"{DateTime.Now:HH:mm:ss} clickThrough={enabled} hwnd={_hwnd}\n"); } catch { }
         const int GwlExStyle = -20;
         const int WsExTransparent = 0x20;
+        const int WsExNoActivate = 0x08000000;
         var style = GetWindowLongPtr(_hwnd, GwlExStyle).ToInt64();
-        var updated = enabled ? style | WsExTransparent : style & ~WsExTransparent;
+        var updated = enabled ? style | WsExTransparent | WsExNoActivate : style & ~WsExTransparent & ~WsExNoActivate;
         SetWindowLongPtr(_hwnd, GwlExStyle, new IntPtr(updated));
     }
     private void OpenSettings()
@@ -805,9 +807,10 @@ public partial class MainWindow : Window
         {
             Topmost = false;
             var scaling = RenderScaling <= 0 ? 1 : RenderScaling;
-            Width = screen.Bounds.Width / scaling;
-            Height = screen.Bounds.Height / scaling;
-            Position = new PixelPoint(screen.Bounds.X, screen.Bounds.Y);
+            var work = screen.WorkingArea;
+            Width = work.Width / scaling;
+            Height = work.Height / scaling;
+            Position = new PixelPoint(work.X, work.Y);
         }
         else
         {
