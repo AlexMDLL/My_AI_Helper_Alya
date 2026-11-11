@@ -3,7 +3,7 @@ using Alya.System;
 using Alya.Voice;
 
 var system = new WindowsSystemController();
-using var sidecar = new SileroSidecarTtsService();
+using var sidecar = new TcpSileroTtsService();
 ITtsService tts = sidecar.Available ? sidecar : new SileroTtsService();
 IAsrService asr = new SherpaAsrService();
 
