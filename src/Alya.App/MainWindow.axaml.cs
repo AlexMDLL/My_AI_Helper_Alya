@@ -675,6 +675,7 @@ public partial class MainWindow : Window
                     {
                         _fallTimer.Stop();
                         _fallTimer = null;
+                        try { global::System.Media.SystemSounds.Asterisk.Play(); } catch { }
                     }
                 }
             }
@@ -731,7 +732,7 @@ public partial class MainWindow : Window
     private void Add(string role, string text)
     {
         var isUser = role == "user";
-        _messages.Add(new Bubble
+        var bubble = new Bubble
         {
             Text = text,
             Time = DateTime.Now.ToString("HH:mm"),
@@ -739,9 +740,11 @@ public partial class MainWindow : Window
             Background = isUser
                 ? new SolidColorBrush(Color.Parse("#3E6F9E"))
                 : new SolidColorBrush(Color.Parse("#1B2C42"))
-        });
+        };
+        _messages.Add(bubble);
         Dispatcher.UIThread.Post(() =>
         {
+            bubble.Opacity = 1;
             var scroll = MessagesList.Parent as ScrollViewer;
             scroll?.ScrollToEnd();
         });
