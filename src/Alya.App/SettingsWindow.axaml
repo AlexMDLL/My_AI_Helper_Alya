@@ -5,8 +5,23 @@
         Width="420" Height="480"
         CanResize="False"
         WindowStartupLocation="CenterOwner"
-        Background="#0D1522">
-  <Grid RowDefinitions="Auto,*,Auto">
+        >
+  <Window.Styles>
+    <Style Selector="TabItem">
+      <Setter Property="Foreground" Value="#8EA4BD"/>
+      <Setter Property="FontSize" Value="13"/>
+      <Setter Property="Padding" Value="10,6"/>
+    </Style>
+    <Style Selector="TabItem:selected">
+      <Setter Property="Foreground" Value="#5EEAD4"/>
+    </Style>
+    <Style Selector="Button">
+      <Setter Property="CornerRadius" Value="10"/>
+    </Style>
+    <Style Selector="TextBox, ComboBox, NumericUpDown">
+      <Setter Property="CornerRadius" Value="10"/>
+    </Style>
+  </Window.Styles>  <Grid RowDefinitions="Auto,*,Auto">
     <Border Padding="16,12" Background="#1B2C42">
       <TextBlock Text="НАСТРОЙКИ" FontSize="13" FontWeight="SemiBold" Foreground="#E8F1FB" LetterSpacing="2"/>
     </Border>

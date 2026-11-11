@@ -25,6 +25,19 @@ public partial class SettingsWindow : Window
             _ => 0
         });
 
+        Opacity = 0;
+        var started = DateTime.UtcNow;
+        var timer = new Avalonia.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
+        timer.Tick += (_, _) =>
+        {
+            var progress = Math.Clamp((DateTime.UtcNow - started).TotalMilliseconds / 220.0, 0, 1);
+            Opacity = 1 - Math.Pow(1 - progress, 3);
+            if (progress < 1) return;
+            timer.Stop();
+            Opacity = 1;
+        };
+        timer.Start();
+
         SaveButton.Click += (_, _) => Save();
         CancelButton.Click += (_, _) => Close();
     }

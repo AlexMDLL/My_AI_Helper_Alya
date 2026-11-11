@@ -8,6 +8,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using Avalonia.Media.Transformation;
 using Avalonia.Styling;
 using Avalonia.Platform;
 using Avalonia.Threading;
@@ -69,6 +70,10 @@ public partial class MainWindow : Window
         "notion", "obsidian", "idea64", "pycharm64", "webstorm64", "blender", "unity", "rider64"
     };
     private readonly ObservableCollection<Bubble> _messages = new();
+    private readonly TranslateTransform _panelOffset = new();
+    private bool _panelDragging;
+    private Point _panelStart;
+    private double _panelStartX;
     private DispatcherTimer? _clickTimer;
     private bool _clickThrough;
     private IntPtr _hwnd;
@@ -103,6 +108,7 @@ public partial class MainWindow : Window
         _piper.OnEvent += kind => Dispatcher.UIThread.Post(() => HandleVoiceEvent(kind));
         _llm.ExtraContext = _memory.ToPrompt();
         MessagesList.ItemsSource = _messages;
+        ChatPanel.RenderTransform = _panelOffset;
         try
         {
             Icon = new WindowIcon(global::System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "alya.ico"));
@@ -127,6 +133,23 @@ public partial class MainWindow : Window
             }
         };
         CloseButton.Click += (_, _) => Hide();
+        HeaderBar.PointerPressed += (_, args) =>
+        {
+            if (args.Source is Button) return;
+            _panelDragging = true;
+            _panelStart = args.GetPosition(this);
+            _panelStartX = _panelOffset.X;
+            args.Pointer.Capture(HeaderBar);
+        };
+        HeaderBar.PointerMoved += (_, args) =>
+        {
+            if (!_panelDragging) return;
+            var delta = args.GetPosition(this).X - _panelStart.X;
+            var max = Math.Max(0, Bounds.Width - ChatPanel.Bounds.Width - 20);
+            _panelOffset.X = Math.Clamp(_panelStartX + delta, 0, max);
+        };
+        HeaderBar.PointerReleased += (_, _) => _panelDragging = false;
+
         SettingsButton.Click += (_, _) => OpenSettings();
         CharacterImage.PointerPressed += (_, args) =>
         {
@@ -178,7 +201,10 @@ public partial class MainWindow : Window
         Opened += (_, _) =>
         {
             var screen = Screens.Primary?.WorkingArea ?? new PixelRect(0, 0, 1920, 1080);
-            Position = new PixelPoint(screen.X + screen.Width - 800, screen.Y + 60);
+            var targetX = screen.X + screen.Width - 800;
+            targetX = Math.Clamp(targetX, screen.X, screen.X + screen.Width - (int)Width);
+            var targetY = Math.Clamp(screen.Y + 60, screen.Y, screen.Y + screen.Height - (int)Height);
+            Position = new PixelPoint(targetX, targetY);
             StatusText.Text = $"голос: {(_silero.Available ? "Silero" : _piper.Available ? "Piper" : "Windows")}";
             LoadCharacter();
             CreateTray();
