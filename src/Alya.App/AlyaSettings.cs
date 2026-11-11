@@ -6,7 +6,7 @@ public sealed class AlyaSettings
 {
     public string Model { get; set; } = "qwen2.5:7b-instruct";
     public string Speaker { get; set; } = "xenia";
-    public double Pitch { get; set; } = 0.97;
+    public double Pitch { get; set; } = 1.2;
     public int Fps { get; set; } = 120;
     public int ChatAutoHideSeconds { get; set; } = 20;
     public bool Autostart { get; set; }

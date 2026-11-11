@@ -18,11 +18,11 @@
           <TextBox x:Name="ModelBox" Watermark="qwen2.5:7b-instruct"/>
           <TextBlock Text="Голос" Foreground="#8EA4BD" FontSize="11"/>
           <ComboBox x:Name="SpeakerBox" HorizontalAlignment="Stretch">
-            <ComboBoxItem Content="xenia"/>
-            <ComboBoxItem Content="baya"/>
-            <ComboBoxItem Content="kseniya2"/>
-            <ComboBoxItem Content="aidar"/>
-            <ComboBoxItem Content="eugene"/>
+            <ComboBoxItem Content="Ксения 2 (xenia)"/>
+            <ComboBoxItem Content="Бая (baya)"/>
+            <ComboBoxItem Content="Ксения (kseniya)"/>
+            <ComboBoxItem Content="Айдар (aidar)"/>
+            <ComboBoxItem Content="Юджин (eugene)"/>
           </ComboBox>
           <TextBlock Text="Тембр (0.8 — ниже, 1.3 — выше)" Foreground="#8EA4BD" FontSize="11"/>
           <Slider x:Name="PitchSlider" Minimum="0.8" Maximum="1.3" TickFrequency="0.01"/>

@@ -19,7 +19,7 @@ public partial class SettingsWindow : Window
         SpeakerBox.SelectedIndex = Math.Max(0, _settings.Speaker switch
         {
             "baya" => 1,
-            "kseniya2" => 2,
+            "kseniya" => 2,
             "aidar" => 3,
             "eugene" => 4,
             _ => 0
@@ -61,7 +61,7 @@ public partial class SettingsWindow : Window
         _settings.Speaker = SpeakerBox.SelectedIndex switch
         {
             1 => "baya",
-            2 => "kseniya2",
+            2 => "kseniya",
             3 => "aidar",
             4 => "eugene",
             _ => "xenia"
