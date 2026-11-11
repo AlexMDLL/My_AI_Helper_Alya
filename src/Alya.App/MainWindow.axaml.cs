@@ -818,10 +818,14 @@ public partial class MainWindow : Window
         if (screen is null) return;
         var area = screen.WorkingArea;
         var width = ChatPanel.IsVisible ? 780 : 460;
+        var height = 716;
         var right = Position.X + (int)Width;
+        var bottom = Position.Y + (int)Height;
         Width = width;
+        Height = height;
         var x = Math.Clamp(right - width, area.X, area.X + area.Width - width);
-        Position = new PixelPoint(x, Position.Y);
+        var y = Math.Clamp(bottom - height, area.Y, area.Y + area.Height - height);
+        Position = new PixelPoint(x, y);
         ApplyCharacterLayout();
     }
     private void ApplyWindowMode()
@@ -838,11 +842,13 @@ public partial class MainWindow : Window
         }
         else
         {
-            Topmost = true;
-            Width = 780;
-            Height = 720;
+            Topmost = false;
             var area = screen.WorkingArea;
-            Position = new PixelPoint(area.X + area.Width - 800, area.Y + 60);
+            var width = ChatPanel.IsVisible ? 780 : 460;
+            var height = 716;
+            Width = width;
+            Height = height;
+            Position = new PixelPoint(area.X + area.Width - width, screen.Bounds.Y + screen.Bounds.Height - height + 6);
         }
         ApplyCharacterLayout();
     }
@@ -893,7 +899,7 @@ public partial class MainWindow : Window
     {
         if (!_settings.FallEnabled) return;
         if (Screens.Primary is null) return;
-        var area = Screens.Primary.WorkingArea;
+        var area = Screens.Primary.Bounds;
         _fallX = Math.Clamp(Position.X, area.X, area.X + area.Width - (int)Width);
         var floor = area.Y + area.Height - (int)Height - 4;
         _fallY = Position.Y;
