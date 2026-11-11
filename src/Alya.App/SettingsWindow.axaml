@@ -34,6 +34,7 @@
           <TextBlock Text="Автоскрытие чата, секунд" Foreground="#8EA4BD" FontSize="11"/>
           <NumericUpDown x:Name="AutoHideBox" Minimum="5" Maximum="300" Increment="5"/>
           <CheckBox x:Name="TtsEnabled" Content="Озвучивать ответы" IsChecked="True"/>
+          <CheckBox x:Name="AutostartBox" Content="Запускать вместе с Windows"/>
         </StackPanel>
       </TabItem>
 

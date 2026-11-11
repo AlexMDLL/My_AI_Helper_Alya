@@ -15,6 +15,7 @@ public partial class SettingsWindow : Window
         AutoHideBox.Value = _settings.ChatAutoHideSeconds;
         FpsBox.Value = _settings.Fps;
         PitchSlider.Value = _settings.Pitch;
+        AutostartBox.IsChecked = _settings.Autostart;
         SpeakerBox.SelectedIndex = Math.Max(0, _settings.Speaker switch
         {
             "baya" => 1,
@@ -26,6 +27,29 @@ public partial class SettingsWindow : Window
 
         SaveButton.Click += (_, _) => Save();
         CancelButton.Click += (_, _) => Close();
+    }
+
+    private static void ApplyAutostart(bool enabled)
+    {
+        try
+        {
+            using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(
+                @"Software\Microsoft\Windows\CurrentVersion\Run", writable: true);
+            if (key is null) return;
+            if (enabled)
+            {
+                var exe = Environment.ProcessPath;
+                if (!string.IsNullOrEmpty(exe)) key.SetValue("AlyaNext", "\"" + exe + "\"");
+            }
+            else
+            {
+                key.DeleteValue("AlyaNext", throwOnMissingValue: false);
+            }
+        }
+        catch
+        {
+            // автозапуск не критичен
+        }
     }
 
     private void Save()
@@ -42,7 +66,9 @@ public partial class SettingsWindow : Window
             4 => "eugene",
             _ => "xenia"
         };
+        _settings.Autostart = AutostartBox.IsChecked == true;
         _settings.Save();
+        ApplyAutostart(_settings.Autostart);
         StatusText.Text = "Сохранено";
         Close();
     }

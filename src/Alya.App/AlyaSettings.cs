@@ -9,6 +9,7 @@ public sealed class AlyaSettings
     public double Pitch { get; set; } = 0.97;
     public int Fps { get; set; } = 120;
     public int ChatAutoHideSeconds { get; set; } = 20;
+    public bool Autostart { get; set; }
 
     public static string PathFile =>
         global::System.IO.Path.Combine(
