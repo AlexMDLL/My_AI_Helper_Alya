@@ -1,17 +1,20 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 
 namespace Alya.App;
 
 public partial class SettingsWindow : Window
 {
     private readonly AlyaSettings _settings;
+    private string _accent;
 
     public SettingsWindow()
     {
         InitializeComponent();
         _settings = AlyaSettings.Load();
+        _accent = _settings.Accent;
         ModelBox.Text = _settings.Model;
         AutoHideBox.Value = _settings.ChatAutoHideSeconds;
         FpsBox.Value = _settings.Fps;
@@ -25,10 +28,35 @@ public partial class SettingsWindow : Window
             "eugene" => 4,
             _ => 0
         });
+        OpacitySlider.Value = 1;
+        Opacity = 1;
+        RefreshAccent();
+        RefreshMemory();
 
         NavGeneral.Click += (_, _) => SelectTab(0);
-        NavChat.Click += (_, _) => SelectTab(1);
-        NavView.Click += (_, _) => SelectTab(2);
+        NavBrain.Click += (_, _) => SelectTab(1);
+        NavMemory.Click += (_, _) => SelectTab(2);
+        NavChat.Click += (_, _) => SelectTab(3);
+        NavVoice.Click += (_, _) => SelectTab(4);
+        NavView.Click += (_, _) => SelectTab(5);
+
+        foreach (var swatch in new[] { SwatchTeal, SwatchBlue, SwatchPink, SwatchPurple, SwatchOrange })
+        {
+            swatch.Click += (_, _) =>
+            {
+                _accent = (string?)swatch.Tag ?? "#38BDF8";
+                RefreshAccent();
+            };
+        }
+
+        OpacitySlider.PropertyChanged += (_, args) =>
+        {
+            if (args.Property == Slider.ValueProperty) Opacity = Math.Clamp(OpacitySlider.Value, 0.6, 1);
+        };
+
+        CheckModelButton.Click += async (_, _) => await CheckOllamaAsync();
+        ClearMemoryButton.Click += (_, _) => ClearMemory();
+        PreviewVoiceButton.Click += (_, _) => PreviewVoice();
 
         TitleBar.PointerPressed += (_, args) =>
         {
@@ -36,32 +64,80 @@ public partial class SettingsWindow : Window
             BeginMoveDrag(args);
         };
 
-        Opacity = 0;
-        var started = DateTime.UtcNow;
-        var timer = new Avalonia.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
-        timer.Tick += (_, _) =>
-        {
-            var progress = Math.Clamp((DateTime.UtcNow - started).TotalMilliseconds / 220.0, 0, 1);
-            Opacity = 1 - Math.Pow(1 - progress, 3);
-            if (progress < 1) return;
-            timer.Stop();
-            Opacity = 1;
-        };
-        timer.Start();
+        Opacity = 1;
 
         SaveButton.Click += (_, _) => Save();
         CancelButton.Click += (_, _) => Close();
     }
 
+    private void RefreshAccent()
+    {
+        var accent = Color.Parse(_accent);
+        SaveButton.Background = new SolidColorBrush(accent);
+        foreach (var swatch in new[] { SwatchTeal, SwatchBlue, SwatchPink, SwatchPurple, SwatchOrange })
+        {
+            var selected = string.Equals((string?)swatch.Tag, _accent, StringComparison.OrdinalIgnoreCase);
+            swatch.Classes.Set("selected", selected);
+        }
+    }
+
+    private void RefreshMemory()
+    {
+        var memory = MemoryStore.Load();
+        MemorySummary.Text = $"Фактов: {memory.Facts.Count} · Правил: {memory.Rules.Count}";
+    }
+
+    private void ClearMemory()
+    {
+        try
+        {
+            var file = global::System.IO.Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Alya", "memory.json");
+            if (File.Exists(file)) File.Delete(file);
+            MemorySummary.Text = "Память очищена";
+        }
+        catch
+        {
+            MemorySummary.Text = "Не удалось очистить";
+        }
+    }
+
+    private async Task CheckOllamaAsync()
+    {
+        BrainStatus.Text = "Проверяю…";
+        try
+        {
+            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
+            var tags = await http.GetStringAsync("http://127.0.0.1:11434/api/tags");
+            BrainStatus.Text = tags.Contains(_settings.Model) ? $"Модель на связи: {_settings.Model}" : "Ollama отвечает, модель не найдена";
+        }
+        catch (Exception error)
+        {
+            BrainStatus.Text = $"Нет связи: {error.Message}";
+        }
+    }
+
+    private void PreviewVoice()
+    {
+        var service = new SapiTtsService();
+        _ = service.SpeakAsync("Привет! Так я звучать буду.");
+    }
+
     private void SelectTab(int index)
     {
         PanelGeneral.IsVisible = index == 0;
-        PanelChat.IsVisible = index == 1;
-        PanelView.IsVisible = index == 2;
+        PanelBrain.IsVisible = index == 1;
+        PanelMemory.IsVisible = index == 2;
+        PanelChat.IsVisible = index == 3;
+        PanelVoice.IsVisible = index == 4;
+        PanelView.IsVisible = index == 5;
 
         NavGeneral.Classes.Set("active", index == 0);
-        NavChat.Classes.Set("active", index == 1);
-        NavView.Classes.Set("active", index == 2);
+        NavBrain.Classes.Set("active", index == 1);
+        NavMemory.Classes.Set("active", index == 2);
+        NavChat.Classes.Set("active", index == 3);
+        NavVoice.Classes.Set("active", index == 4);
+        NavView.Classes.Set("active", index == 5);
     }
 
     private void OnCancel(object? sender, RoutedEventArgs e) => Close();
@@ -104,6 +180,8 @@ public partial class SettingsWindow : Window
             _ => "xenia"
         };
         _settings.Autostart = AutostartBox.IsChecked == true;
+        _settings.Opacity = Math.Clamp(OpacitySlider.Value, 0.6, 1);
+        _settings.Accent = _accent;
         _settings.Save();
         ApplyAutostart(_settings.Autostart);
         StatusText.Text = "Сохранено";

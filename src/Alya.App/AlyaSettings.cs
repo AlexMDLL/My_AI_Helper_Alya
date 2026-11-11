@@ -10,6 +10,8 @@ public sealed class AlyaSettings
     public int Fps { get; set; } = 120;
     public int ChatAutoHideSeconds { get; set; } = 20;
     public bool Autostart { get; set; }
+    public double Opacity { get; set; } = 1.0;
+    public string Accent { get; set; } = "#38BDF8";
 
     public static string PathFile =>
         global::System.IO.Path.Combine(

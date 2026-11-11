@@ -107,6 +107,8 @@ public partial class MainWindow : Window
         _sapi.OnEvent += kind => Dispatcher.UIThread.Post(() => HandleVoiceEvent(kind));
         _piper.OnEvent += kind => Dispatcher.UIThread.Post(() => HandleVoiceEvent(kind));
         _llm.ExtraContext = _memory.ToPrompt();
+        ApplyAccent();
+        Opacity = Math.Clamp(_settings.Opacity, 0.6, 1);
         MessagesList.ItemsSource = _messages;
         ChatPanel.RenderTransform = _panelOffset;
         try
@@ -448,6 +450,8 @@ public partial class MainWindow : Window
             if (fact.Length == 0) return "Что запомнить-то?";
             _memory.AddFact(fact);
             _llm.ExtraContext = _memory.ToPrompt();
+        ApplyAccent();
+        Opacity = Math.Clamp(_settings.Opacity, 0.6, 1);
             return $"Запомнила: {fact}";
         }
         if (lower.StartsWith("правило"))
@@ -456,6 +460,8 @@ public partial class MainWindow : Window
             if (rule.Length == 0) return "Какое правило?";
             _memory.AddRule(rule);
             _llm.ExtraContext = _memory.ToPrompt();
+        ApplyAccent();
+        Opacity = Math.Clamp(_settings.Opacity, 0.6, 1);
             return "Хорошо, буду соблюдать.";
         }
         if (lower.Contains("что ты помнишь") || lower.Contains("что помнишь"))
@@ -662,6 +668,17 @@ public partial class MainWindow : Window
         window.ShowDialog(this);
     }
 
+    private void ApplyAccent()
+    {
+        try
+        {
+            SendButton.Background = new SolidColorBrush(Color.Parse(_settings.Accent));
+        }
+        catch
+        {
+            // цвет может быть некорректным — оставляем дефолт
+        }
+    }
     private void ApplySettings()
     {
         var previousModel = _settings.Model;
