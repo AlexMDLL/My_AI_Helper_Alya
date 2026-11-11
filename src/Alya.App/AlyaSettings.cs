@@ -14,7 +14,7 @@ public sealed class AlyaSettings
     public bool Care { get; set; } = true;
     public bool TtsEnabled { get; set; } = true;
     public double PersonaScale { get; set; } = 1.0;
-    public int PersonaOffset { get; set; } = 0;
+    public int PersonaOffset { get; set; } = 3;
     public double Temperature { get; set; } = 0.8;
     public double Opacity { get; set; } = 1.0;
     public string Accent { get; set; } = "#38BDF8";
