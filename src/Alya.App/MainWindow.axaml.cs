@@ -833,7 +833,8 @@ public partial class MainWindow : Window
         }
         catch (Exception error)
         {
-            return $"Не получилось прочитать экран: {error.Message}";
+            var detail = error.InnerException?.Message ?? error.Message;
+            return $"Не получилось прочитать экран: {detail}";
         }
     }
     private string? TryTimerCommand(string text)
