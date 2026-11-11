@@ -768,7 +768,8 @@ public partial class MainWindow : Window
         HistoryStore.Save(_history);
         Add("alya", reply);
         StatusText.Text = "говорит…";
-        await _tts.SpeakAsync(reply, "neutral");
+        if (_settings.TtsEnabled) await _tts.SpeakAsync(reply, "neutral");
+        else StatusText.Text = "на связи";
     }
 
     private void Add(string role, string text)

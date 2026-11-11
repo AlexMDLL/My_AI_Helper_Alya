@@ -12,6 +12,7 @@ public sealed class AlyaSettings
     public bool Autostart { get; set; }
     public bool Bubbles { get; set; } = true;
     public bool Care { get; set; } = true;
+    public bool TtsEnabled { get; set; } = true;
     public double Temperature { get; set; } = 0.8;
     public double Opacity { get; set; } = 1.0;
     public string Accent { get; set; } = "#38BDF8";

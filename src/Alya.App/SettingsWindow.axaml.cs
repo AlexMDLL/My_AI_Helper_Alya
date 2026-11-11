@@ -21,6 +21,7 @@ public partial class SettingsWindow : Window
         PitchSlider.Value = _settings.Pitch;
         AutostartBox.IsChecked = _settings.Autostart;
         BubblesBox.IsChecked = _settings.Bubbles;
+        TtsEnabled.IsChecked = _settings.TtsEnabled;
         CareBox.IsChecked = _settings.Care;
         TemperatureBox.Value = (decimal)Math.Clamp(_settings.Temperature, 0.5, 1.2);
         SpeakerBox.SelectedIndex = Math.Max(0, _settings.Speaker switch
@@ -238,6 +239,7 @@ public partial class SettingsWindow : Window
         };
         _settings.Autostart = AutostartBox.IsChecked == true;
         _settings.Bubbles = BubblesBox.IsChecked == true;
+        _settings.TtsEnabled = TtsEnabled.IsChecked == true;
         _settings.Care = CareBox.IsChecked == true;
         _settings.Temperature = Math.Round((double)(TemperatureBox.Value ?? 0.8m), 2);
         _settings.Opacity = Math.Clamp(OpacitySlider.Value, 0.6, 1);
