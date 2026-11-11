@@ -533,7 +533,7 @@ public partial class MainWindow : Window
             {
                 _cache[path] = bitmap;
                 _cacheOrder.Enqueue(path);
-                while (_cacheOrder.Count > 80)
+                while (_cacheOrder.Count > 40)
                 {
                     var old = _cacheOrder.Dequeue();
                     if (!string.Equals(old, path, StringComparison.OrdinalIgnoreCase)) _cache.Remove(old);
@@ -554,7 +554,7 @@ public partial class MainWindow : Window
         {
             try
             {
-                for (var offset = 1; offset <= 50; offset++)
+                for (var offset = 1; offset <= 30; offset++)
                 {
                     var index = (start + offset) % snapshot.Length;
                     var path = snapshot[index];
@@ -569,7 +569,7 @@ public partial class MainWindow : Window
                         {
                             _cache[path] = bitmap;
                             _cacheOrder.Enqueue(path);
-                            while (_cacheOrder.Count > 80)
+                            while (_cacheOrder.Count > 40)
                             {
                                 var old = _cacheOrder.Dequeue();
                                 if (!string.Equals(old, path, StringComparison.OrdinalIgnoreCase)) _cache.Remove(old);

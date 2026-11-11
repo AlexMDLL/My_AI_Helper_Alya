@@ -1,4 +1,5 @@
 using System.Text;
+using Avalonia.Threading;
 using NAudio.Wave;
 using Whisper.net;
 
@@ -16,6 +17,8 @@ public sealed class VoiceInputService : IDisposable
     private bool _hadSpeech;
     private bool _busy;
     private DateTime _lastLevelLog = DateTime.MinValue;
+    private DateTime _lastUsed = DateTime.MinValue;
+    private DispatcherTimer? _idleTimer;
     private int _sampleRate = 16000;
 
     public event Action<string>? TextRecognized;
@@ -57,6 +60,17 @@ public sealed class VoiceInputService : IDisposable
             Log("whisper loaded");
             _wave.StartRecording();
             Log("mic started");
+            _lastUsed = DateTime.Now;
+            _idleTimer ??= new DispatcherTimer { Interval = TimeSpan.FromMinutes(1) };
+            _idleTimer.Tick += (_, _) =>
+            {
+                if ((DateTime.Now - _lastUsed).TotalMinutes < 10) return;
+                if (_processor is null) return;
+                _processor.Dispose();
+                _processor = null;
+                Log("whisper unloaded (idle)");
+            };
+            _idleTimer.Start();
             ListeningChanged?.Invoke(true);
         }
         catch (Exception error)
@@ -133,6 +147,7 @@ public sealed class VoiceInputService : IDisposable
             {
                 builder.Append(segment.Text).Append(' ');
             }
+            _lastUsed = DateTime.Now;
             var text = builder.ToString().Trim();
             Log($"heard: {text}");
             if (text.Length >= 2) TextRecognized?.Invoke(text);
