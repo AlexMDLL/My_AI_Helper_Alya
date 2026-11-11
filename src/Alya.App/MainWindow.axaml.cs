@@ -96,6 +96,14 @@ public partial class MainWindow : Window
         _tts.Pitch = _settings.Pitch;
         _llm.ExtraContext = _memory.ToPrompt();
         MessagesList.ItemsSource = _messages;
+        try
+        {
+            Icon = new WindowIcon(global::System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "alya.ico"));
+        }
+        catch
+        {
+            // иконка не критична
+        }
         _history.AddRange(HistoryStore.Load());
         foreach (var old in _history.TakeLast(6))
         {
@@ -166,7 +174,7 @@ public partial class MainWindow : Window
             StatusText.Text = $"голос: {(_tts.Available ? "Silero" : "нет")}";
             LoadCharacter();
             CreateTray();
-            ChatPanel.Opacity = 1;
+            AnimateEntrance();
             _hwnd = TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
             _clickTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(60) };
             _clickTimer.Tick += (_, _) => UpdateClickThrough();
@@ -238,6 +246,14 @@ public partial class MainWindow : Window
             ToolTipText = "Аля",
             Menu = menu
         };
+        try
+        {
+            _tray.Icon = new WindowIcon(global::System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "alya.ico"));
+        }
+        catch
+        {
+            // без иконки трей всё равно работает
+        }
         _tray.Clicked += (_, _) => ShowWindow();
     }
 
@@ -472,6 +488,27 @@ public partial class MainWindow : Window
         }
     }
     private void AnimateEntrance()
+    {
+        ChatPanel.Opacity = 0;
+        var transform = new TranslateTransform(0, 18);
+        ChatPanel.RenderTransform = transform;
+        var started = DateTime.UtcNow;
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
+        timer.Tick += (_, _) =>
+        {
+            var progress = Math.Clamp((DateTime.UtcNow - started).TotalMilliseconds / 320.0, 0, 1);
+            var eased = 1 - Math.Pow(1 - progress, 3);
+            ChatPanel.Opacity = eased;
+            transform.Y = 18 * (1 - eased);
+            if (progress < 1) return;
+            timer.Stop();
+            ChatPanel.Opacity = 1;
+            transform.Y = 0;
+        };
+        timer.Start();
+    }
+
+    private void AnimateEntranceOld()
     {
         ChatPanel.Opacity = 0;
         ChatPanel.RenderTransform = new TranslateTransform(0, 18);
