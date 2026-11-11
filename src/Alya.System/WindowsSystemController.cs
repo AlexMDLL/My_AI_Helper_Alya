@@ -106,10 +106,27 @@ public sealed class WindowsSystemController : Alya.Core.ISystemController
                     else { Start("com.epicgames.launcher://apps"); started = true; }
                     return true;
                 case "fortnite":
-                    var fortnite = @"C:\Program Files\Epic Games\Fortnite\FortniteGame\Binaries\Win64\FortniteClient-Win64-Shipping.exe";
-                    if (File.Exists(fortnite)) { Start(fortnite); started = true; }
-                    else { Start("com.epicgames.launcher://apps/Fortnite?action=launch&silent=true"); started = true; }
-                    return true;                case "telegram":
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            if (Process.GetProcessesByName("EpicGamesLauncher").Length == 0)
+                            {
+                                var launcher = @"C:\Program Files\Epic Games\Launcher\Portal\Binaries\Win64\EpicGamesLauncher.exe";
+                                if (!File.Exists(launcher)) launcher = @"C:\Program Files (x86)\Epic Games\Launcher\Portal\Binaries\Win64\EpicGamesLauncher.exe";
+                                if (File.Exists(launcher)) Start(launcher);
+                                await Task.Delay(9000);
+                            }
+                            Start("com.epicgames.launcher://apps/Fortnite?action=launch&silent=true");
+                        }
+                        catch
+                        {
+                            // Epic может быть не установлен
+                        }
+                    });
+                    started = true;
+                    return true;
+                case "telegram":
                     var tg = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Telegram Desktop", "Telegram.exe");
                     if (File.Exists(tg)) { Start(tg); started = true; return true; }
                     return false;
