@@ -823,7 +823,9 @@ public partial class MainWindow : Window
         }
         try { File.AppendAllText(Path.Combine(Path.GetTempPath(), "alya-voice.log"), $"{DateTime.Now:HH:mm:ss} open target='{target}' resolved='{resolved}'\n"); } catch { }
         var ok = _system.Launch(resolved);
-        return ok ? $"Открываю {target}." : $"Не нашла {target}.";
+        if (ok) return $"Открываю {target}.";
+        if (_steam.Launch(resolved, out var gameName)) return $"Запускаю {gameName}.";
+        return $"Не нашла {target}.";
     }
     private async Task<string?> TryWeatherAsync(string text)
     {
