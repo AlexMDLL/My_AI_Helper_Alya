@@ -110,6 +110,25 @@ public sealed class MemoryGraph : Control
             }
         }
         _centroid = new Point(_nodes.Average(n => n.X), _nodes.Average(n => n.Y));
+        // минимальный отступ от центра: ни один кружок не липнет к середине
+        for (var i = 0; i < _nodes.Count; i++)
+        {
+            var node = _nodes[i];
+            var offsetX = node.X - _centroid.X;
+            var offsetY = node.Y - _centroid.Y;
+            var distance = Math.Sqrt(offsetX * offsetX + offsetY * offsetY);
+            var minDistance = node.Kind is "user" or "city" ? 150.0 : 115.0;
+            if (distance >= minDistance) continue;
+            if (distance < 1)
+            {
+                var angle = Math.PI * 2 * i / Math.Max(1, _nodes.Count);
+                offsetX = Math.Cos(angle);
+                offsetY = Math.Sin(angle);
+                distance = 1;
+            }
+            node.X = _centroid.X + offsetX / distance * minDistance;
+            node.Y = _centroid.Y + offsetY / distance * minDistance;
+        }
         _centered = false;
         _appear = 0;
     }
