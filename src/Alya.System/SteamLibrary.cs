@@ -154,7 +154,7 @@ public sealed class SteamLibrary
                         var nameValue = nameMatch2.Groups[1].Value;
                         if (!match.Success) continue;
                         var appId = int.Parse(match.Groups[1].Value);
-                        var name = match.Groups[2].Value;
+                        var name = nameValue;
                         if (_games.All(game => game.AppId != appId)) _games.Add((appId, name));
                     }
                     catch
