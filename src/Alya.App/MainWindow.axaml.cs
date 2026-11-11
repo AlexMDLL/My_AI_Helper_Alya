@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -17,6 +18,7 @@ namespace Alya.App;
 public partial class MainWindow : Window
 {
     private readonly WindowsSystemController _system = new();
+    private readonly SteamLibrary _steam = new();
     private readonly TcpSileroTtsService _tts = new();
     private OllamaLlmClient _llm = new();
     private AlyaSettings _settings = new();
@@ -89,6 +91,11 @@ public partial class MainWindow : Window
         _tts.Speaker = _settings.Speaker;
         _tts.Pitch = _settings.Pitch;
         MessagesList.ItemsSource = _messages;
+        _history.AddRange(HistoryStore.Load());
+        foreach (var old in _history.TakeLast(6))
+        {
+            Add(old.Role == "user" ? "user" : "alya", old.Content);
+        }
 
         SendButton.Click += (_, _) => Send();
         InputBox.KeyDown += (_, args) =>
@@ -367,6 +374,16 @@ public partial class MainWindow : Window
         });
     }
 
+    private string? TryLaunchGame(string text)
+    {
+        var match = Regex.Match(text, @"(запусти|включи|открой|поиграем в)\s+(.+)", RegexOptions.IgnoreCase);
+        if (!match.Success) return null;
+        var query = match.Groups[2].Value.Trim();
+        if (query.Length == 0) return null;
+        return _steam.Launch(query, out var name)
+            ? $"Запускаю {name}."
+            : null;
+    }
     private void DetectLaunches()
     {
         if (_talking) return;
@@ -537,13 +554,14 @@ public partial class MainWindow : Window
         string reply;
         try
         {
-            reply = await _llm.CompleteAsync(_history);
+            reply = TryLaunchGame(text) ?? await _llm.CompleteAsync(_history);
         }
         catch (Exception error)
         {
             reply = $"Не получилось подумать: {error.Message}";
         }
         _history.Add(new ChatMessage("assistant", reply, DateTimeOffset.Now));
+        HistoryStore.Save(_history);
         Add("alya", reply);
         StatusText.Text = "говорит…";
         try
