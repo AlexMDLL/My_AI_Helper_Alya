@@ -1,5 +1,10 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using Bitmap = System.Drawing.Bitmap;
+using Graphics = System.Drawing.Graphics;
+using Size = System.Drawing.Size;
+using ImageFormat = System.Drawing.Imaging.ImageFormat;
+using Tesseract;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Avalonia;
@@ -790,6 +795,47 @@ public partial class MainWindow : Window
         }
         return weather ?? $"Не получилось узнать погоду в {city}. Проверь интернет.";
     }
+    [global::System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern int GetSystemMetrics(int index);
+
+    private string? TryScreenCommand(string text)
+    {
+        var lower = text.ToLowerInvariant();
+        if (!lower.Contains("на экране") && !lower.Contains("экран") && !lower.Contains("скриншот")) return null;
+        try
+        {
+            var width = GetSystemMetrics(0);
+            var height = GetSystemMetrics(1);
+            var path = global::System.IO.Path.Combine(global::System.IO.Path.GetTempPath(), "alya-screen.png");
+            using (var bitmap = new Bitmap(width, height))
+            using (var graphics = Graphics.FromImage(bitmap))
+            {
+                graphics.CopyFromScreen(0, 0, 0, 0, new Size(width, height));
+                bitmap.Save(path, ImageFormat.Png);
+            }
+
+            var dataDir = global::System.IO.Path.Combine(AppContext.BaseDirectory, "tools", "tesseract");
+            if (!Directory.Exists(dataDir))
+            {
+                dataDir = global::System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Projects", "alya-next", "tools", "tesseract");
+            }
+            if (!Directory.Exists(dataDir)) return "Не нашла языковые данные OCR.";
+
+            using var engine = new TesseractEngine(dataDir, "rus+eng", EngineMode.Default);
+            using var pix = Pix.LoadFromFile(path);
+            using var page = engine.Process(pix);
+            var recognized = page.GetText()?.Trim() ?? string.Empty;
+            recognized = Regex.Replace(recognized, @"\s+", " ").Trim();
+            if (recognized.Length == 0) return "На экране не вижу текста — только картинки.";
+            if (recognized.Length > 350) recognized = recognized[..350] + "…";
+            return $"Вижу на экране: {recognized}";
+        }
+        catch (Exception error)
+        {
+            return $"Не получилось прочитать экран: {error.Message}";
+        }
+    }
     private string? TryTimerCommand(string text)
     {
         var lower = text.ToLowerInvariant();
@@ -1342,7 +1388,7 @@ public partial class MainWindow : Window
         Bubble? streamedBubble = null;
         try
         {
-            var quick = TryMemoryCommand(text) ?? TryTimerCommand(text) ?? TryPowerCommand(text) ?? TryCloseApp(text) ?? TryOpenApp(text) ?? TryLaunchGame(text);
+            var quick = TryMemoryCommand(text) ?? TryTimerCommand(text) ?? TryPowerCommand(text) ?? TryScreenCommand(text) ?? TryCloseApp(text) ?? TryOpenApp(text) ?? TryLaunchGame(text);
             if (quick is null) quick = await TryWeatherAsync(text);
             if (quick is not null)
             {
