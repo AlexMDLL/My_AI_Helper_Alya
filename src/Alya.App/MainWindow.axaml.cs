@@ -173,7 +173,8 @@ public partial class MainWindow : Window
         _pttTimer.Tick += (_, _) =>
         {
             if (!_settings.PushToTalk) return;
-            var pressed = (GetAsyncKeyState(0x77) & 0x8000) != 0;
+            var pressed = (GetAsyncKeyState(0x06) & 0x8000) != 0;
+            // 0x06 = Mouse5 (XBUTTON2)
             if (pressed && !_pttDown)
             {
                 _pttDown = true;
