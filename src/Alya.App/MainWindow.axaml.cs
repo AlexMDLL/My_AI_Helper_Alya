@@ -496,7 +496,7 @@ public partial class MainWindow : Window
         if (!_scenes.ContainsKey("VideoStand")) return;
 
         PlayScene("VideoStand");
-        _animTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1000.0 / Math.Clamp(_settings.Fps, 24, 240)) };
+        _animTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16.6) };
         _animTimer.Tick += (_, _) => Tick();
         _animTimer.Start();
 
@@ -1051,7 +1051,7 @@ public partial class MainWindow : Window
         }
         if (_animTimer is not null)
         {
-            _animTimer.Interval = TimeSpan.FromMilliseconds(1000.0 / Math.Clamp(_settings.Fps, 24, 240));
+            _animTimer.Interval = TimeSpan.FromMilliseconds(16.6);
         }
     }
 
