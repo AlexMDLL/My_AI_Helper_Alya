@@ -672,6 +672,13 @@ public partial class MainWindow : Window
         else if (lower.Contains("калькул") || lower.Contains("calc")) processes.Add("calc");
         else if (lower.Contains("ворд") || lower.Contains("word")) processes.Add("winword");
         else if (lower.Contains("эксель") || lower.Contains("excel")) processes.Add("excel");
+        else if (lower.Contains("телег") || lower.Contains("telegram") || lower.Contains("тг")) processes.Add("Telegram");
+        else if (lower.Contains("браузер") || lower.Contains("гугл")) processes.Add("chrome");
+        else if (lower.Contains("паинт") || lower.Contains("paint")) processes.Add("mspaint");
+        else if (lower.Contains("фотошоп") || lower.Contains("photoshop")) processes.Add("Photoshop");
+        else if (lower.Contains("проводник") || lower.Contains("explorer")) processes.Add("explorer");
+        else if (lower.Contains("вс код") || lower.Contains("vs code") || lower.Contains("visual studio code")) processes.Add("Code");
+        else if (lower.Contains("епки") || lower.Contains("epic games")) processes.Add("EpicGamesLauncher");
         else if (lower.Contains("спотиф") || lower.Contains("spotify")) processes.Add("Spotify");
         else if (lower.Contains("код") || lower.Contains("code")) processes.Add("Code");
         else processes.Add(target);
