@@ -19,10 +19,16 @@ public partial class MainWindow : Window
     private readonly TcpSileroTtsService _tts = new();
     private readonly OllamaLlmClient _llm = new();
     private readonly List<ChatMessage> _history = new();
-    private readonly Dictionary<int, Avalonia.Media.Imaging.Bitmap> _cache = new();
+    private readonly Dictionary<string, string[]> _scenes = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, Avalonia.Media.Imaging.Bitmap> _cache = new();
+    private readonly Queue<string> _cacheOrder = new();
     private string[] _frames = Array.Empty<string>();
+    private string _scene = "VideoStand";
     private int _frame;
+    private int _oneShotLeft;
+    private bool _talking;
     private DispatcherTimer? _animTimer;
+    private DispatcherTimer? _gestureTimer;
     private readonly ObservableCollection<Bubble> _messages = new();
     private TrayIcon? _tray;
 
@@ -76,57 +82,87 @@ public partial class MainWindow : Window
 
     private void LoadCharacter()
     {
-        var directory = Environment.GetEnvironmentVariable("ALYA_ANIM_DIR")
+        var root = Environment.GetEnvironmentVariable("ALYA_ANIM_ROOT")
             ?? Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                "Projects", "jarvis", "resources", "anim", "VideoStand");
-        if (!Directory.Exists(directory)) return;
+                "Projects", "jarvis", "resources", "anim");
+        if (!Directory.Exists(root)) return;
 
-        _frames = Directory.GetFiles(directory, "*.webp")
-            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-        if (_frames.Length == 0) return;
-
-        ShowFrame(0);
-        _animTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(42) };
-        _animTimer.Tick += (_, _) =>
+        foreach (var name in new[] { "VideoStand", "VideoTalk", "VideoWink", "VideoDeny", "VideoSurprise", "VideoShyJoy" })
         {
-            _frame = (_frame + 1) % _frames.Length;
-            ShowFrame(_frame);
-        };
+            var directory = Path.Combine(root, name);
+            if (!Directory.Exists(directory)) continue;
+            var frames = Directory.GetFiles(directory, "*.webp")
+                .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+            if (frames.Length > 0) _scenes[name] = frames;
+        }
+        if (!_scenes.ContainsKey("VideoStand")) return;
+
+        PlayScene("VideoStand");
+        _animTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(42) };
+        _animTimer.Tick += (_, _) => Tick();
         _animTimer.Start();
+
+        _gestureTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
+        _gestureTimer.Tick += (_, _) =>
+        {
+            if (_talking || !_scene.Equals("VideoStand", StringComparison.OrdinalIgnoreCase)) return;
+            var gestures = new[] { "VideoWink", "VideoDeny", "VideoSurprise", "VideoShyJoy" };
+            PlayScene(gestures[Random.Shared.Next(gestures.Length)], oneShot: true);
+        };
+        _gestureTimer.Start();
+    }
+
+    private void PlayScene(string name, bool oneShot = false)
+    {
+        if (!_scenes.TryGetValue(name, out var frames)) return;
+        _scene = name;
+        _frames = frames;
+        _frame = 0;
+        _oneShotLeft = oneShot ? frames.Length : 0;
+        ShowFrame(0);
+    }
+
+    private void Tick()
+    {
+        if (_frames.Length == 0) return;
+        if (_oneShotLeft > 0)
+        {
+            _oneShotLeft--;
+            if (_oneShotLeft == 0)
+            {
+                PlayScene("VideoStand");
+                return;
+            }
+        }
+        _frame = (_frame + 1) % _frames.Length;
+        ShowFrame(_frame);
     }
 
     private void ShowFrame(int index)
     {
         if (_frames.Length == 0) return;
-        if (!_cache.TryGetValue(index, out var bitmap))
+        var path = _frames[index];
+        if (!_cache.TryGetValue(path, out var bitmap))
         {
             try
             {
-                bitmap = new Avalonia.Media.Imaging.Bitmap(_frames[index]);
+                bitmap = new Avalonia.Media.Imaging.Bitmap(path);
             }
             catch
             {
                 return;
             }
-            _cache[index] = bitmap;
-            TrimCache(index);
-        }
-        CharacterImage.Source = bitmap;
-    }
-
-    private void TrimCache(int current)
-    {
-        if (_cache.Count <= 60) return;
-        foreach (var key in _cache.Keys.ToList())
-        {
-            var distance = Math.Abs(key - current);
-            if (distance > 40 && distance < _frames.Length - 40)
+            _cache[path] = bitmap;
+            _cacheOrder.Enqueue(path);
+            while (_cacheOrder.Count > 120)
             {
-                _cache.Remove(key);
+                var old = _cacheOrder.Dequeue();
+                if (!string.Equals(old, path, StringComparison.OrdinalIgnoreCase)) _cache.Remove(old);
             }
         }
+        CharacterImage.Source = bitmap;
     }
 
     private void ShowWindow()
@@ -158,10 +194,14 @@ public partial class MainWindow : Window
         StatusText.Text = "говорит…";
         try
         {
+            _talking = true;
+            PlayScene("VideoTalk");
             await _tts.SpeakAsync(reply, "neutral");
         }
         finally
         {
+            _talking = false;
+            PlayScene("VideoStand");
             StatusText.Text = "на связи";
         }
     }
