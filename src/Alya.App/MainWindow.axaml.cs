@@ -252,7 +252,13 @@ public partial class MainWindow : Window
             drag.Click += (_, _) => _touchMode = "drag";
             var pet = new MenuItem { Header = (_touchMode == "pet" ? "✓ " : "") + "Поглаживания" };
             pet.Click += (_, _) => _touchMode = "pet";
-            var lockDrag = new MenuItem { Header = (_lockDrag ? "✓ " : "") + "Блокировать перетаскивание" };
+            var topmost = new MenuItem { Header = (_settings.AlwaysOnTop ? "✓ " : "") + "Поверх всех окон" };
+            topmost.Click += (_, _) =>
+            {
+                _settings.AlwaysOnTop = !_settings.AlwaysOnTop;
+                Topmost = _settings.AlwaysOnTop;
+                _settings.Save();
+            };            var lockDrag = new MenuItem { Header = (_lockDrag ? "✓ " : "") + "Блокировать перетаскивание" };
             lockDrag.Click += (_, _) => _lockDrag = !_lockDrag;
             var exit = new MenuItem { Header = "Выход" };
             exit.Click += (_, _) => Close();
@@ -262,6 +268,7 @@ public partial class MainWindow : Window
             menu.Items.Add(drag);
             menu.Items.Add(pet);
             menu.Items.Add(lockDrag);
+            menu.Items.Add(topmost);
             menu.Items.Add(new Separator());
             menu.Items.Add(exit);
             menu.Open(CharacterImage);
@@ -816,7 +823,7 @@ public partial class MainWindow : Window
     {
         if (_settings.Fullscreen)
         {
-            Topmost = false;
+            Topmost = _settings.AlwaysOnTop;
             var screen = Screens.Primary;
             if (screen is null) return;
             var scaling = RenderScaling <= 0 ? 1 : RenderScaling;
@@ -826,7 +833,7 @@ public partial class MainWindow : Window
             ApplyCharacterLayout();
             return;
         }
-        Topmost = false;
+        Topmost = _settings.AlwaysOnTop;
         UpdateWindowSize();
     }
 
