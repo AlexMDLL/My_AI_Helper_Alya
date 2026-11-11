@@ -50,6 +50,8 @@ public partial class MainWindow : Window
     private bool _dragMoved;
     private bool _hiddenByFilter;
     private bool _initialized;
+    private string? _pendingPower;
+    private DateTime _pendingPowerAt;
     private DateTime _lastActivity = DateTime.Now;
     private DispatcherTimer? _hideTimer;
     private DispatcherTimer? _bubbleTimer;
@@ -691,6 +693,46 @@ public partial class MainWindow : Window
         }
         return weather ?? $"Не получилось узнать погоду в {city}. Проверь интернет.";
     }
+    private string? TryPowerCommand(string text)
+    {
+        var lower = text.ToLowerInvariant();
+        var isRestart = lower.Contains("перезагруз") || lower.Contains("ребут") || lower.Contains("restart");
+        var isShutdown = lower.Contains("выключ") || lower.Contains("отключ") || lower.Contains("shutdown");
+        if (!isRestart && !isShutdown) return null;
+        var aboutPc = lower.Contains("комп") || lower.Contains("пк") || lower.Contains("систем") || lower.Contains("windows");
+        if (!aboutPc && !lower.Contains("перезагруз") && !lower.Contains("выключ")) return null;
+
+        if (lower.Contains("отмен"))
+        {
+            _pendingPower = null;
+            return "Отменила.";
+        }
+        var action = isRestart ? "restart" : "shutdown";
+        if (lower.Contains("подтвержда") || lower.Contains("да, ") || lower.Equals("да"))
+        {
+            if (_pendingPower is null || (DateTime.Now - _pendingPowerAt).TotalSeconds > 45)
+            {
+                return "Подтверждение устарело. Скажи ещё раз, что сделать.";
+            }
+            var command = _pendingPower;
+            _pendingPower = null;
+            try
+            {
+                var args = command == "restart" ? "/r /t 10 /c \"Аля: перезагрузка\"" : "/s /t 10 /c \"Аля: выключение\"";
+                global::System.Diagnostics.Process.Start(new global::System.Diagnostics.ProcessStartInfo("shutdown", args) { UseShellExecute = true, CreateNoWindow = true });
+                return command == "restart" ? "Перезагружаю компьютер через 10 секунд." : "Выключаю компьютер через 10 секунд.";
+            }
+            catch (Exception error)
+            {
+                return $"Не получилось: {error.Message}";
+            }
+        }
+        _pendingPower = action;
+        _pendingPowerAt = DateTime.Now;
+        return action == "restart"
+            ? "Перезагрузить компьютер? Скажи «подтверждаю» в течение 45 секунд."
+            : "Выключить компьютер? Скажи «подтверждаю» в течение 45 секунд.";
+    }
     private string? TryCloseApp(string text)
     {
         var match = Regex.Match(text.Trim(), @"(закрой|закрыть|выключи|заверши|убей)\s+(.+)$", RegexOptions.IgnoreCase);
@@ -1154,7 +1196,7 @@ public partial class MainWindow : Window
         string reply;
         try
         {
-            reply = TryMemoryCommand(text) ?? TryCloseApp(text) ?? TryOpenApp(text) ?? TryLaunchGame(text) ?? await TryWeatherAsync(text) ?? await _llm.CompleteAsync(_history);
+            reply = TryMemoryCommand(text) ?? TryPowerCommand(text) ?? TryCloseApp(text) ?? TryOpenApp(text) ?? TryLaunchGame(text) ?? await TryWeatherAsync(text) ?? await _llm.CompleteAsync(_history);
         }
         catch (Exception error)
         {
