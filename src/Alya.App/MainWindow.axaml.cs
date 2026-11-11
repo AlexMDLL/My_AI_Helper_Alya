@@ -97,6 +97,7 @@ public partial class MainWindow : Window
         public int Y;
     }
     private TrayIcon? _tray;
+    private SettingsWindow? _settingsWindow;
 
     public MainWindow()
     {
@@ -124,6 +125,7 @@ public partial class MainWindow : Window
                 _settings.PersonaOffset = fresh.PersonaOffset;
                 ApplyCharacterLayout();
             }
+            if (_settingsWindow is not null) return;
             if (!ChatPanel.IsVisible) return;
             if (fresh.ChatAutoHideSeconds <= 0) return;
             if ((DateTime.Now - _lastActivity).TotalSeconds < fresh.ChatAutoHideSeconds) return;
@@ -707,9 +709,19 @@ public partial class MainWindow : Window
     }
     private void OpenSettings()
     {
+        if (_settingsWindow is not null)
+        {
+            _settingsWindow.Activate();
+            return;
+        }
         var window = new SettingsWindow();
-        window.Closed += (_, _) => ApplySettings();
-        window.ShowDialog(this);
+        _settingsWindow = window;
+        window.Closed += (_, _) =>
+        {
+            _settingsWindow = null;
+            ApplySettings();
+        };
+        window.Show(this);
     }
 
     private void ApplyCharacterLayout()
