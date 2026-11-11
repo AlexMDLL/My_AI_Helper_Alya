@@ -27,9 +27,9 @@
       <Setter Property="Foreground" Value="#FF7B8C"/>
     </Style>
   </Window.Styles>
-  <Grid ColumnDefinitions="380,*">
+  <Grid ColumnDefinitions="Auto,*">
 
-    <Border Grid.Column="0" x:Name="ChatPanel" CornerRadius="20"
+    <Border Grid.Column="0" x:Name="ChatPanel" Width="380" CornerRadius="20"
             RenderTransformOrigin="0,0"
             BorderBrush="#33A7D8FF"
             BorderThickness="1"
@@ -95,7 +95,7 @@
     </Border>
 
     <Grid Grid.Column="1">
-      <Image x:Name="CharacterImage" MaxWidth="460" Stretch="Uniform" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,0,0" RenderTransformOrigin="0.5,1" RenderOptions.BitmapInterpolationMode="HighQuality"/>
+      <Image x:Name="CharacterImage" MaxWidth="480" Stretch="Uniform" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Margin="0,0,0,0" RenderTransformOrigin="0.5,1" RenderOptions.BitmapInterpolationMode="HighQuality"/>
       <Image x:Name="CharacterFade" Stretch="Uniform" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,0,0" RenderTransformOrigin="0.5,1" Opacity="0" IsVisible="False" IsHitTestVisible="False" RenderOptions.BitmapInterpolationMode="HighQuality"/>
       <Border x:Name="SpeechBubble" IsVisible="False" MaxWidth="300" HorizontalAlignment="Center" VerticalAlignment="Top"
               Margin="10,18,10,0" Padding="12,9" CornerRadius="14" Background="#FF16243A"

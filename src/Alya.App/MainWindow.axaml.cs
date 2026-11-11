@@ -134,7 +134,7 @@ public partial class MainWindow : Window
             if (!ChatPanel.IsVisible) return;
             if (fresh.ChatAutoHideSeconds <= 0) return;
             if ((DateTime.Now - _lastActivity).TotalSeconds < fresh.ChatAutoHideSeconds) return;
-            ChatPanel.IsVisible = false;
+            SetChatVisible(false);
         };
         _hideTimer.Start();
         var taskbarTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
@@ -176,7 +176,7 @@ public partial class MainWindow : Window
                 args.Handled = true;
             }
         };
-        CloseButton.Click += (_, _) => ChatPanel.IsVisible = false;
+        CloseButton.Click += (_, _) => SetChatVisible(false);
         HeaderBar.PointerPressed += (_, args) =>
         {
             if (args.Source is Button) return;
@@ -216,7 +216,7 @@ public partial class MainWindow : Window
             if (!point.Properties.IsLeftButtonPressed) return;
             if (args.ClickCount == 2)
             {
-                ChatPanel.IsVisible = !ChatPanel.IsVisible;
+                SetChatVisible(!ChatPanel.IsVisible);
                 return;
             }
             if (!_settings.DragEnabled || _lockDrag || _touchMode == "pet") return;
@@ -266,7 +266,7 @@ public partial class MainWindow : Window
             chat.Click += (_, _) =>
             {
                 _lastActivity = DateTime.Now;
-                ChatPanel.IsVisible = !ChatPanel.IsVisible;
+                SetChatVisible(!ChatPanel.IsVisible);
             };
             var drag = new MenuItem { Header = (_touchMode == "drag" ? "✓ " : "") + "Перетаскивание" };
             drag.Click += (_, _) => _touchMode = "drag";
@@ -804,6 +804,25 @@ public partial class MainWindow : Window
         window.Show(this);
     }
 
+    private void SetChatVisible(bool visible)
+    {
+        ChatPanel.IsVisible = visible;
+        _lastActivity = DateTime.Now;
+        if (!_settings.Fullscreen) UpdateWindowSize();
+    }
+
+    private void UpdateWindowSize()
+    {
+        var screen = Screens.Primary;
+        if (screen is null) return;
+        var area = screen.WorkingArea;
+        var width = ChatPanel.IsVisible ? 780 : 460;
+        var right = Position.X + (int)Width;
+        Width = width;
+        var x = Math.Clamp(right - width, area.X, area.X + area.Width - width);
+        Position = new PixelPoint(x, Position.Y);
+        ApplyCharacterLayout();
+    }
     private void ApplyWindowMode()
     {
         var screen = Screens.Primary;
@@ -955,7 +974,7 @@ public partial class MainWindow : Window
     {
         var isUser = role == "user";
         _lastActivity = DateTime.Now;
-        ChatPanel.IsVisible = true;
+        SetChatVisible(true);
         if (!isUser && _settings.Bubbles && text.Length < 160) ShowBubble(text);
         var bubble = new Bubble
         {
