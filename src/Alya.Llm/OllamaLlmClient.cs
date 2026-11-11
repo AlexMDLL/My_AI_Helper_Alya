@@ -14,6 +14,7 @@ public sealed class OllamaLlmClient : ILlmClient, IDisposable
     private readonly string _systemPrompt;
     public string ExtraContext { get; set; } = string.Empty;
     public double Temperature { get; set; } = 0.8;
+    public string Persona { get; set; } = string.Empty;
 
     public OllamaLlmClient(string model = "qwen2.5:7b-instruct", string baseUrl = "http://127.0.0.1:11434", string? systemPrompt = null)
     {
@@ -37,7 +38,8 @@ public sealed class OllamaLlmClient : ILlmClient, IDisposable
     }
     public async Task<string> CompleteAsync(IReadOnlyList<ChatMessage> history, CancellationToken cancellationToken = default)
     {
-        var prompt = string.IsNullOrWhiteSpace(ExtraContext) ? _systemPrompt : _systemPrompt + " " + ExtraContext;
+        var basePrompt = string.IsNullOrWhiteSpace(Persona) ? _systemPrompt : Persona;
+        var prompt = string.IsNullOrWhiteSpace(ExtraContext) ? basePrompt : basePrompt + " " + ExtraContext;
         var messages = new List<object> { new { role = "system", content = prompt } };
         foreach (var message in history)
         {

@@ -16,6 +16,7 @@ public partial class SettingsWindow : Window
         _settings = AlyaSettings.Load();
         _accent = _settings.Accent;
         ModelBox.Text = _settings.Model;
+        PersonaBox.Text = _settings.Persona;
         AutoHideBox.Value = _settings.ChatAutoHideSeconds;
         FpsBox.Value = _settings.Fps;
         PitchSlider.Value = _settings.Pitch;
@@ -273,6 +274,7 @@ public partial class SettingsWindow : Window
     }
     private void Save()
     {
+        _settings.Persona = PersonaBox.Text?.Trim() ?? string.Empty;
         _settings.Model = ModelSelect.SelectedItem as string ?? (ModelBox.Text?.Trim() is { Length: > 0 } model ? model : "qwen2.5:7b-instruct");
         _settings.ChatAutoHideSeconds = (int)(AutoHideBox.Value ?? 20);
         _settings.Fps = (int)(FpsBox.Value ?? 120);

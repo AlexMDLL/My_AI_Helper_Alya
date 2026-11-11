@@ -49,6 +49,7 @@ public partial class MainWindow : Window
     private bool _hiddenByFilter;
     private DateTime _lastActivity = DateTime.Now;
     private DispatcherTimer? _hideTimer;
+    private DispatcherTimer? _bubbleTimer;
     private Point _dragOffset;
     private double _fallY;
     private double _fallVelocity;
@@ -108,7 +109,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         _settings = AlyaSettings.Load();
-        _llm = new OllamaLlmClient(_settings.Model) { Temperature = _settings.Temperature };
+        _llm = new OllamaLlmClient(_settings.Model) { Temperature = _settings.Temperature, Persona = _settings.Persona };
         _silero.Speaker = _settings.Speaker;
         _silero.Pitch = _settings.Pitch;
         _piper.Pitch = _settings.Pitch;
@@ -506,7 +507,7 @@ public partial class MainWindow : Window
             {
                 _cache[path] = bitmap;
                 _cacheOrder.Enqueue(path);
-                while (_cacheOrder.Count > 240)
+                while (_cacheOrder.Count > 140)
                 {
                     var old = _cacheOrder.Dequeue();
                     if (!string.Equals(old, path, StringComparison.OrdinalIgnoreCase)) _cache.Remove(old);
@@ -542,7 +543,7 @@ public partial class MainWindow : Window
                         {
                             _cache[path] = bitmap;
                             _cacheOrder.Enqueue(path);
-                            while (_cacheOrder.Count > 240)
+                            while (_cacheOrder.Count > 140)
                             {
                                 var old = _cacheOrder.Dequeue();
                                 if (!string.Equals(old, path, StringComparison.OrdinalIgnoreCase)) _cache.Remove(old);
@@ -945,7 +946,7 @@ public partial class MainWindow : Window
         _piper.Pitch = _settings.Pitch;
         if (!string.Equals(previousModel, _settings.Model, StringComparison.OrdinalIgnoreCase))
         {
-            _llm = new OllamaLlmClient(_settings.Model) { Temperature = _settings.Temperature };
+            _llm = new OllamaLlmClient(_settings.Model) { Temperature = _settings.Temperature, Persona = _settings.Persona };
         }
         if (_animTimer is not null)
         {
@@ -1033,13 +1034,17 @@ public partial class MainWindow : Window
     {
         SpeechText.Text = text;
         SpeechBubble.IsVisible = true;
-        var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(6) };
-        timer.Tick += (_, _) =>
+        if (_bubbleTimer is null)
         {
-            timer.Stop();
-            SpeechBubble.IsVisible = false;
-        };
-        timer.Start();
+            _bubbleTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(6) };
+            _bubbleTimer.Tick += (_, _) =>
+            {
+                _bubbleTimer?.Stop();
+                SpeechBubble.IsVisible = false;
+            };
+        }
+        _bubbleTimer.Stop();
+        _bubbleTimer.Start();
     }
 
     private void Add(string role, string text)

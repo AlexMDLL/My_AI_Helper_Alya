@@ -125,14 +125,17 @@
       <ScrollViewer Grid.Row="2" Margin="16,10">
         <Grid>
           <StackPanel x:Name="PanelGeneral" Spacing="4">
+            <TextBlock Text="Характер Али" Classes="label"/>
+            <TextBox x:Name="PersonaBox" AcceptsReturn="True" Height="150" TextWrapping="Wrap"
+                     Watermark="Опиши, какая она: тон, манера речи, что любит…"/>
+            <TextBlock Text="Это описание подмешивается в системный промпт." Classes="hint" Margin="0,6,0,0"/>
+          </StackPanel>
+
+          <StackPanel x:Name="PanelBrain" Spacing="4" IsVisible="False">
             <TextBlock Text="Модель Ollama" Classes="label"/>
             <TextBox x:Name="ModelBox" Watermark="qwen2.5:7b-instruct"/>
             <TextBlock Text="Температура модели (0.5–1.2)" Classes="label"/>
             <NumericUpDown x:Name="TemperatureBox" Minimum="0.5" Maximum="1.2" Increment="0.05"/>
-            <TextBlock Text="Сервер Ollama: 127.0.0.1:11434" Classes="hint" Margin="0,6,0,0"/>
-          </StackPanel>
-
-          <StackPanel x:Name="PanelBrain" Spacing="4" IsVisible="False">
             <TextBlock Text="Проверка связи с моделью" Classes="label"/>
             <Button x:Name="CheckModelButton" Content="Проверить Ollama" Classes="ghost" HorizontalAlignment="Left"/>
             <TextBlock x:Name="BrainStatus" Text="—" Classes="hint" Margin="0,8,0,0"/>
