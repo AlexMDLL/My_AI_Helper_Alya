@@ -168,6 +168,9 @@
           </StackPanel>
 
           <StackPanel x:Name="PanelView" Spacing="4" IsVisible="False">
+            <CheckBox x:Name="DragEnabledBox" Content="Разрешить перетаскивание" Margin="0,6,0,0"/>
+            <CheckBox x:Name="FallEnabledBox" Content="Физика падения" Margin="0,4,0,0"/>
+            <CheckBox x:Name="PetEnabledBox" Content="Поглаживания" Margin="0,4,0,0"/>
             <TextBlock Text="Кадров в секунду" Classes="label"/>
             <NumericUpDown x:Name="FpsBox" Minimum="24" Maximum="240" Increment="12"/>
             <TextBlock x:Name="ScaleLabel" Text="Размер — 1.00" Classes="label"/>

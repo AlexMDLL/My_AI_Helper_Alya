@@ -203,7 +203,7 @@ public partial class MainWindow : Window
                 ChatPanel.IsVisible = !ChatPanel.IsVisible;
                 return;
             }
-            if (_lockDrag || _touchMode == "pet") return;
+            if (!_settings.DragEnabled || _lockDrag || _touchMode == "pet") return;
             _dragging = true;
             _dragMoved = false;
             var screen = ScreenPoint(args.GetPosition(CharacterImage));
@@ -218,7 +218,7 @@ public partial class MainWindow : Window
 
         CharacterImage.PointerMoved += (_, args) =>
         {
-            if (_touchMode == "pet" && args.GetCurrentPoint(CharacterImage).Properties.IsLeftButtonPressed)
+            if (_settings.PetEnabled && _touchMode == "pet" && args.GetCurrentPoint(CharacterImage).Properties.IsLeftButtonPressed)
             {
                 if ((DateTime.Now - _lastPetAt).TotalSeconds < 4) return;
                 _lastPetAt = DateTime.Now;
@@ -240,6 +240,32 @@ public partial class MainWindow : Window
                 (int)Math.Round(screen.Y - _dragOffset.Y));
         };
 
+        CharacterImage.PointerReleased += (_, args) =>
+        {
+            if (args.InitialPressMouseButton != MouseButton.Right) return;
+            var menu = new ContextMenu();
+            var settings = new MenuItem { Header = "Настройки" };
+            settings.Click += (_, _) => OpenSettings();
+            var chat = new MenuItem { Header = ChatPanel.IsVisible ? "Скрыть чат" : "Показать чат" };
+            chat.Click += (_, _) => ChatPanel.IsVisible = !ChatPanel.IsVisible;
+            var drag = new MenuItem { Header = (_touchMode == "drag" ? "✓ " : "") + "Перетаскивание" };
+            drag.Click += (_, _) => _touchMode = "drag";
+            var pet = new MenuItem { Header = (_touchMode == "pet" ? "✓ " : "") + "Поглаживания" };
+            pet.Click += (_, _) => _touchMode = "pet";
+            var lockDrag = new MenuItem { Header = (_lockDrag ? "✓ " : "") + "Блокировать перетаскивание" };
+            lockDrag.Click += (_, _) => _lockDrag = !_lockDrag;
+            var exit = new MenuItem { Header = "Выход" };
+            exit.Click += (_, _) => Close();
+            menu.Items.Add(settings);
+            menu.Items.Add(chat);
+            menu.Items.Add(new Separator());
+            menu.Items.Add(drag);
+            menu.Items.Add(pet);
+            menu.Items.Add(lockDrag);
+            menu.Items.Add(new Separator());
+            menu.Items.Add(exit);
+            menu.Open(CharacterImage);
+        };
         CharacterImage.PointerReleased += (_, _) =>
         {
             if (!_dragging) return;
@@ -257,6 +283,7 @@ public partial class MainWindow : Window
             Position = new PixelPoint(targetX, targetY);
             StatusText.Text = $"голос: {(_silero.Available ? "Silero" : _piper.Available ? "Piper" : "Windows")}";
             LoadCharacter();
+            StartFall();
             CreateTray();
             AnimateEntrance();
 
@@ -785,6 +812,7 @@ public partial class MainWindow : Window
     }
     private void StartFall()
     {
+        if (!_settings.FallEnabled) return;
         if (Screens.Primary is null) return;
         var area = Screens.Primary.WorkingArea;
         _fallX = Math.Clamp(Position.X, area.X, area.X + area.Width - (int)Width);

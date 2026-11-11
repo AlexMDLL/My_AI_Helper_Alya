@@ -21,6 +21,9 @@ public partial class SettingsWindow : Window
         PitchSlider.Value = _settings.Pitch;
         AutostartBox.IsChecked = _settings.Autostart;
         ScaleSlider.Value = _settings.PersonaScale;
+        DragEnabledBox.IsChecked = _settings.DragEnabled;
+        FallEnabledBox.IsChecked = _settings.FallEnabled;
+        PetEnabledBox.IsChecked = _settings.PetEnabled;
         OffsetSlider.Value = _settings.PersonaOffset;
         BubblesBox.IsChecked = _settings.Bubbles;
         TtsEnabled.IsChecked = _settings.TtsEnabled;
@@ -270,6 +273,9 @@ public partial class SettingsWindow : Window
         _settings.Autostart = AutostartBox.IsChecked == true;
         _settings.Bubbles = BubblesBox.IsChecked == true;
         _settings.TtsEnabled = TtsEnabled.IsChecked == true;
+        _settings.DragEnabled = DragEnabledBox.IsChecked == true;
+        _settings.FallEnabled = FallEnabledBox.IsChecked == true;
+        _settings.PetEnabled = PetEnabledBox.IsChecked == true;
         _settings.Care = CareBox.IsChecked == true;
         _settings.PersonaScale = Math.Round(ScaleSlider.Value, 2);
         _settings.PersonaOffset = (int)OffsetSlider.Value;
