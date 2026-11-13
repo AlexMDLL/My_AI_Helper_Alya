@@ -55,6 +55,11 @@ public partial class MainWindow : Window
     private bool _dragMoved;
     private bool _hiddenByFilter;
     private bool _initialized;
+    private DateTime _lastAction = DateTime.Now;
+    private bool _isSitting;
+    private const bool _use3d = false;
+    private DispatcherTimer? _fatigueTimer;
+    private TimeSpan _sitDelay = TimeSpan.FromMinutes(5);
     private string? _pendingPower;
     private DateTime _pendingPowerAt;
     private DateTime _talkingStarted;
@@ -294,6 +299,7 @@ public partial class MainWindow : Window
         CloseButton.Click += (_, _) => SetChatVisible(false);
         HeaderBar.PointerPressed += (_, args) =>
         {
+            MarkAction();
             if (args.Source is Button) return;
             _panelDragging = true;
             _panelStart = args.GetPosition(this);
@@ -312,6 +318,7 @@ public partial class MainWindow : Window
         SettingsButton.Click += (_, _) => OpenSettings();
         CharacterImage.PointerPressed += (_, args) =>
         {
+            MarkAction();
             var point = args.GetCurrentPoint(CharacterImage);
             if (!point.Properties.IsLeftButtonPressed) return;
             if (args.ClickCount == 2)
@@ -460,6 +467,7 @@ public partial class MainWindow : Window
             LoadCharacter();
             _voiceDotUpdate();
             _voiceInput.TextRecognized += OnVoiceText;
+            // StartFatigue(); // 3D-анимации временно отключены (2D-режим)
             StartCare();
             if (!_settings.PushToTalk) _voiceInput.Start();
         global::System.Threading.Tasks.Task.Run(async () =>
@@ -768,8 +776,44 @@ public partial class MainWindow : Window
         };
         _statusTimer.Start();
     }
+    private void MarkAction()
+    {
+        if (!_use3d) return;
+        _lastAction = DateTime.Now;
+        if (_isSitting) StandUp();
+    }
+
+    private void StartFatigue()
+    {
+        _fatigueTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
+        _fatigueTimer.Tick += (_, _) =>
+        {
+            var idle = DateTime.Now - _lastAction;
+            if (_isSitting)
+            {
+                if (idle.TotalSeconds < 45) StandUp();
+                return;
+            }
+            if (idle > _sitDelay) SitDown();
+        };
+        _fatigueTimer.Start();
+    }
+
+    private void SitDown()
+    {
+        _isSitting = true;
+        _sitDelay = TimeSpan.FromMinutes(3 + Random.Shared.Next(0, 5));
+        PlayScene("VideoSit");
+    }
+
+    private void StandUp()
+    {
+        _isSitting = false;
+        PlayScene("VideoStand");
+    }
     private void OnVoiceText(string text)
     {
+        MarkAction();
         var stopLower = text.ToLowerInvariant();
         if (stopLower.Contains("стоп") || stopLower.Contains("хватит") || stopLower.Contains("замолчи") || stopLower.Contains("тихо"))
         {
@@ -1533,6 +1577,7 @@ public partial class MainWindow : Window
 
     private async void Send()
     {
+        MarkAction();
         var text = InputBox.Text?.Trim();
         if (string.IsNullOrEmpty(text)) return;
         InputBox.Text = string.Empty;
